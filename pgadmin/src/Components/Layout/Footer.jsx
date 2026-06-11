@@ -2,8 +2,8 @@ import React from "react";
 
 const Footer = () => {
     return (
-        <footer className="bg-white border-t px-6 py-4 text-center text-gray-500">
-            © 2026 Admin Panel. All Rights Reserved.
+        <footer className="bg-white border-t py-4 px-6 text-center text-sm text-gray-500">
+            © 2026 PG Admin Panel. All Rights Reserved.
         </footer>
     );
 };
