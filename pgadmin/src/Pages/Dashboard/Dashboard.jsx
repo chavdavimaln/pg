@@ -1,3 +1,5 @@
+// pgadmin/src/Pages/Dashboard/Dashboard.jsx
+
 import React from "react";
 import AdminLayout from "../../Components/Layout/AdminLayout";
 

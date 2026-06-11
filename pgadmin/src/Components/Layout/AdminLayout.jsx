@@ -1,3 +1,5 @@
+// pgadmin/src/Components/Layout/AdminLayout.jsx
+
 import React, { useState } from "react";
 import Header from "./Header";
 import Sidebar from "./Sidebar";

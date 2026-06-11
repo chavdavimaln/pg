@@ -10,17 +10,18 @@ const RoomCard = ({ room }) => {
             </h3>
 
             <p className="text-gray-500">
-                Room No : {room.roomNo}
+                Room No : {room.roomNumber}
             </p>
 
             <p className="text-gray-500">
-                Beds : {room.totalBeds}
+                Beds : {room.capacity}
             </p>
 
-            <Link
-                to={`/rooms/designer/${room.id}`}
-                className="inline-block mt-4 px-4 py-2 bg-indigo-600 text-white rounded"
-            >
+            <p className="text-green-600 font-medium">
+                {room.status}
+            </p>
+
+            <Link to={`/rooms/designer/${room.id}`} className="inline-block mt-4 px-4 py-2 bg-indigo-600 text-white rounded">
                 Design Room
             </Link>
 

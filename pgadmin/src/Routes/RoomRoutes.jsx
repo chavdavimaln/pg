@@ -1,3 +1,5 @@
+// pgadmin/src/Routes/RoomRoutes.jsx
+
 import { Routes, Route } from "react-router-dom";
 
 import RoomList from "../pages/rooms/RoomList";
