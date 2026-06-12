@@ -22,43 +22,8 @@ const RoomDesigner = () => {
     const [beds, setBeds] = useState([]);
     const [tables, setTables] = useState([]);
     const [cupboards, setCupboards] = useState([]);
-    // useEffect(() => {
-
-    //     const saved = localStorage.getItem(`room-layout-${id}`);
-    //     if (saved) {
-    //         const layout = JSON.parse(saved);
-    //         setRoomName(layout.roomName);
-    //         setBeds(layout.beds || []);
-    //         setTables(layout.tables || []);
-    //         setCupboards(layout.cupboards || []);
-    //     } else {
-    //         setRoomName(roomData?.roomName || "");
-    //         // setBeds(roomData?.beds || []);
-    //         setBeds(
-    //             (roomData?.beds || []).map((bed, index) => ({
-    //                 ...bed,
-    //                 label: `Bed-${index + 1}`
-    //             }))
-    //         );
-    //         setTables([
-    //             {
-    //                 id: "table-1",
-    //                 label: "Table-1",
-    //                 x: 300,
-    //                 y: 100
-    //             }
-    //         ]);
-
-    //         setCupboards([
-    //             {
-    //                 id: "cupboard-1",
-    //                 label: "Cupboard-1",
-    //                 x: 450,
-    //                 y: 100
-    //             }
-    //         ]);
-    //     }
-    // }, [id, roomData]);
+    const [selectedItem, setSelectedItem] = useState(null);
+   
 
     useEffect(() => {
 
@@ -211,6 +176,61 @@ const RoomDesigner = () => {
         setCupboards(updatedCupboards);
     };
 
+    const deleteSelectedItem = () => {
+
+        if (!selectedItem) {
+            alert("Please select an item first");
+            return;
+        }
+
+        const confirmDelete = window.confirm(
+            `Delete ${selectedItem.label} ?`
+        );
+
+        if (!confirmDelete) return;
+
+        if (selectedItem.type === "bed") {
+
+            const updatedBeds =
+                beds
+                    .filter(item => item.id !== selectedItem.id)
+                    .map((item, index) => ({
+                        ...item,
+                        label: `Bed-${index + 1}`
+                    }));
+
+            setBeds(updatedBeds);
+        }
+
+        if (selectedItem.type === "table") {
+
+            const updatedTables =
+                tables
+                    .filter(item => item.id !== selectedItem.id)
+                    .map((item, index) => ({
+                        ...item,
+                        label: `Table-${index + 1}`
+                    }));
+
+            setTables(updatedTables);
+        }
+
+        if (selectedItem.type === "cupboard") {
+
+            const updatedCupboards =
+                cupboards
+                    .filter(item => item.id !== selectedItem.id)
+                    .map((item, index) => ({
+                        ...item,
+                        label: `Cupboard-${index + 1}`
+                    }));
+
+            setCupboards(updatedCupboards);
+        }
+
+        setSelectedItem(null);
+    };
+    
     const updateBedPosition = (id, x, y) => {
 
         setBeds(
@@ -280,6 +300,7 @@ const RoomDesigner = () => {
                         <input type="text" value={`Beds : ${beds.length}`} readOnly className="border rounded-lg p-3 bg-gray-100" />
                     </div>
                 </div>
+                
                 <RoomToolbar
                     addBed={addBed}
                     removeBed={removeBed}
@@ -287,19 +308,22 @@ const RoomDesigner = () => {
                     removeTable={removeTable}
                     addCupboard={addCupboard}
                     removeCupboard={removeCupboard}
+                    deleteSelectedItem={deleteSelectedItem}
                     bedCount={beds.length}
                     tableCount={tables.length}
                     cupboardCount={cupboards.length}
                 />
-
                 <RoomCanvas
                     beds={beds}
                     tables={tables}
                     cupboards={cupboards}
+                    selectedItem={selectedItem}
+                    setSelectedItem={setSelectedItem}
                     updateBedPosition={updateBedPosition}
                     updateTablePosition={updateTablePosition}
                     updateCupboardPosition={updateCupboardPosition}
                 />
+                
             </div>
         </AdminLayout>
     );
