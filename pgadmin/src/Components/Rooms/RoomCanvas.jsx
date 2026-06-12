@@ -1,3 +1,4 @@
+// pgadmin/src/Components/Rooms/RoomCanvas.jsxq
 import React from "react";
 import BedItem from "./BedItem";
 import TableItem from "./TableItem";

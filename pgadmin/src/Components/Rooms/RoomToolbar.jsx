@@ -1,3 +1,4 @@
+// pgadmin/src/Components/Rooms/RoomToolbar.jsx
 import React from "react";
 
 const RoomToolbar = ({ addBed, removeBed, addTable, removeTable, addCupboard, removeCupboard, bedCount, tableCount, cupboardCount }) => {

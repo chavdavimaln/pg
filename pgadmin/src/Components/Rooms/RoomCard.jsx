@@ -1,9 +1,10 @@
+// pgadmin/src/Components/Rooms/RoomCard.jsx
 import React from "react";
 import { Link } from "react-router-dom";
 
 const RoomCard = ({ room }) => {
     return (
-        <div className="bg-white rounded-xl shadow p-5">
+        <div className="bg-white rounded-xl shadow p-5 room-card">
 
             <h3 className="font-semibold text-lg">
                 {room.roomName}

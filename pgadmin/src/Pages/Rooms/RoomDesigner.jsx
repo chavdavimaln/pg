@@ -22,21 +22,96 @@ const RoomDesigner = () => {
     const [beds, setBeds] = useState([]);
     const [tables, setTables] = useState([]);
     const [cupboards, setCupboards] = useState([]);
+    // useEffect(() => {
+
+    //     const saved = localStorage.getItem(`room-layout-${id}`);
+    //     if (saved) {
+    //         const layout = JSON.parse(saved);
+    //         setRoomName(layout.roomName);
+    //         setBeds(layout.beds || []);
+    //         setTables(layout.tables || []);
+    //         setCupboards(layout.cupboards || []);
+    //     } else {
+    //         setRoomName(roomData?.roomName || "");
+    //         // setBeds(roomData?.beds || []);
+    //         setBeds(
+    //             (roomData?.beds || []).map((bed, index) => ({
+    //                 ...bed,
+    //                 label: `Bed-${index + 1}`
+    //             }))
+    //         );
+    //         setTables([
+    //             {
+    //                 id: "table-1",
+    //                 label: "Table-1",
+    //                 x: 300,
+    //                 y: 100
+    //             }
+    //         ]);
+
+    //         setCupboards([
+    //             {
+    //                 id: "cupboard-1",
+    //                 label: "Cupboard-1",
+    //                 x: 450,
+    //                 y: 100
+    //             }
+    //         ]);
+    //     }
+    // }, [id, roomData]);
+
     useEffect(() => {
 
         const saved = localStorage.getItem(`room-layout-${id}`);
+
         if (saved) {
+
             const layout = JSON.parse(saved);
-            setRoomName(layout.roomName);
-            setBeds(layout.beds || []);
-            setTables(layout.tables || []);
-            setCupboards(layout.cupboards || []);
+
+            setRoomName(layout.roomName || "");
+
+            setBeds(
+                (layout.beds || []).map((item, index) => ({
+                    ...item,
+                    label: item.label || `Bed-${index + 1}`
+                }))
+            );
+
+            setTables(
+                (layout.tables || []).map((item, index) => ({
+                    ...item,
+                    label: item.label || `Table-${index + 1}`
+                }))
+            );
+
+            setCupboards(
+                (layout.cupboards || []).map((item, index) => ({
+                    ...item,
+                    label: item.label || `Cupboard-${index + 1}`
+                }))
+            );
+
         } else {
+
             setRoomName(roomData?.roomName || "");
-            setBeds(roomData?.beds || []);
+
+            setBeds(
+                (roomData?.beds || [
+                    {
+                        id: "bed-1",
+                        x: 50,
+                        y: 50
+                    }
+                ]).map((item, index) => ({
+                    ...item,
+                    label: `Bed-${index + 1}`
+                }))
+            );
+
             setTables([
                 {
                     id: "table-1",
+                    label: "Table-1",
                     x: 300,
                     y: 100
                 }
@@ -45,11 +120,13 @@ const RoomDesigner = () => {
             setCupboards([
                 {
                     id: "cupboard-1",
+                    label: "Cupboard-1",
                     x: 450,
                     y: 100
                 }
             ]);
         }
+
     }, [id, roomData]);
 
     const addBed = () => {
@@ -58,22 +135,34 @@ const RoomDesigner = () => {
             ...beds,
             {
                 id: Date.now(),
+                label: `Bed-${beds.length + 1}`,
                 x: 50,
                 y: 50
             }
         ]);
     };
 
+    // const removeBed = () => {
+    //     if (beds.length <= 1) return;
+    //     setBeds(beds.slice(0, -1));
+    // };
+    // const removeBed = () => {
+    //     if (beds.length <= 1) return;
+    //     const updatedBeds = beds.slice(0, -1).map((bed, index) => ({ ...bed, label: `Bed-${index + 1}` }));
+    //     setBeds(updatedBeds);
+    // }
     const removeBed = () => {
         if (beds.length <= 1) return;
-        setBeds(beds.slice(0, -1));
+        const updatedBeds = beds.slice(0, -1).map((item, index) => ({...item,label: `Bed-${index + 1}`}));
+        setBeds(updatedBeds);
     };
 
     const addTable = () => {
         setTables([
             ...tables,
             {
-                id: `table-${Date.now()}`,
+                id: Date.now(),
+                label: `Table-${tables.length + 1}`,
                 x: 250,
                 y: 120
             }
@@ -81,15 +170,27 @@ const RoomDesigner = () => {
     };
 
     const removeTable = () => {
-        if (tables.length === 0) return;
-        setTables(tables.slice(0, -1));
+
+        if (tables.length <= 1) return;
+
+        const updatedTables = tables
+            .slice(0, -1)
+            .map((item, index) => ({
+                ...item,
+                label: `Table-${index + 1}`
+            }));
+
+        setTables(updatedTables);
     };
 
+
     const addCupboard = () => {
+
         setCupboards([
             ...cupboards,
             {
-                id: `cupboard-${Date.now()}`,
+                id: Date.now(),
+                label: `Cupboard-${cupboards.length + 1}`,
                 x: 450,
                 y: 120
             }
@@ -97,8 +198,17 @@ const RoomDesigner = () => {
     };
 
     const removeCupboard = () => {
-        if (cupboards.length === 0) return;
-        setCupboards(cupboards.slice(0, -1));
+
+        if (cupboards.length <= 1) return;
+
+        const updatedCupboards = cupboards
+            .slice(0, -1)
+            .map((item, index) => ({
+                ...item,
+                label: `Cupboard-${index + 1}`
+            }));
+
+        setCupboards(updatedCupboards);
     };
 
     const updateBedPosition = (id, x, y) => {
