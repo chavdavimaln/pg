@@ -23,7 +23,8 @@ const RoomDesigner = () => {
     const [tables, setTables] = useState([]);
     const [cupboards, setCupboards] = useState([]);
     const [selectedItem, setSelectedItem] = useState(null);
-   
+    const [canvasWidth, setCanvasWidth] = useState(600);
+    const [canvasHeight, setCanvasHeight] = useState(400);
 
     useEffect(() => {
 
@@ -96,14 +97,12 @@ const RoomDesigner = () => {
 
     const addBed = () => {
         if (beds.length >= 6) return;
-        setBeds([
-            ...beds,
-            {
-                id: Date.now(),
-                label: `Bed-${beds.length + 1}`,
-                x: 50,
-                y: 50
-            }
+        const pos = getNextPosition([...beds, ...tables, ...cupboards], 70, 140);
+        setBeds([...beds, {
+            id: Date.now(),
+            label: `Bed-${beds.length + 1}`,
+            ...pos
+        }
         ]);
     };
 
@@ -118,19 +117,17 @@ const RoomDesigner = () => {
     // }
     const removeBed = () => {
         if (beds.length <= 1) return;
-        const updatedBeds = beds.slice(0, -1).map((item, index) => ({...item,label: `Bed-${index + 1}`}));
+        const updatedBeds = beds.slice(0, -1).map((item, index) => ({ ...item, label: `Bed-${index + 1}` }));
         setBeds(updatedBeds);
     };
 
     const addTable = () => {
-        setTables([
-            ...tables,
-            {
-                id: Date.now(),
-                label: `Table-${tables.length + 1}`,
-                x: 250,
-                y: 120
-            }
+        const pos = getNextPosition([...beds, ...tables, ...cupboards], 60, 50);
+        setTables([...tables, {
+            id: Date.now(),
+            label: `Table-${tables.length + 1}`,
+            ...pos
+        }
         ]);
     };
 
@@ -150,15 +147,12 @@ const RoomDesigner = () => {
 
 
     const addCupboard = () => {
-
-        setCupboards([
-            ...cupboards,
-            {
-                id: Date.now(),
-                label: `Cupboard-${cupboards.length + 1}`,
-                x: 450,
-                y: 120
-            }
+        const pos = getNextPosition([...beds, ...tables, ...cupboards], 70, 60);
+        setCupboards([...cupboards, {
+            id: Date.now(),
+            label: `Cupboard-${cupboards.length + 1}`,
+            ...pos
+        }
         ]);
     };
 
@@ -177,61 +171,41 @@ const RoomDesigner = () => {
     };
 
     const deleteSelectedItem = () => {
-
-        if (!selectedItem) {
-            alert("Please select an item first");
+        if (selectedItem.type === "bed" && beds.length === 1) {
+            alert("At least one Bed is required");
             return;
         }
-
-        const confirmDelete = window.confirm(
-            `Delete ${selectedItem.label} ?`
-        );
-
-        if (!confirmDelete) return;
-
-        if (selectedItem.type === "bed") {
-
-            const updatedBeds =
-                beds
-                    .filter(item => item.id !== selectedItem.id)
-                    .map((item, index) => ({
-                        ...item,
-                        label: `Bed-${index + 1}`
-                    }));
-
-            setBeds(updatedBeds);
+        if (selectedItem.type === "table" && tables.length === 1) {
+            alert("At least one Table is required");
+            return;
         }
-
-        if (selectedItem.type === "table") {
-
-            const updatedTables =
-                tables
-                    .filter(item => item.id !== selectedItem.id)
-                    .map((item, index) => ({
-                        ...item,
-                        label: `Table-${index + 1}`
-                    }));
-
-            setTables(updatedTables);
+        if (selectedItem.type === "cupboard" && cupboards.length === 1) {
+            alert("At least one Cupboard is required");
+            return;
         }
-
-        if (selectedItem.type === "cupboard") {
-
-            const updatedCupboards =
-                cupboards
-                    .filter(item => item.id !== selectedItem.id)
-                    .map((item, index) => ({
-                        ...item,
-                        label: `Cupboard-${index + 1}`
-                    }));
-
-            setCupboards(updatedCupboards);
-        }
-
-        setSelectedItem(null);
+        // setSelectedItem(null);
     };
-    
-    const updateBedPosition = (id, x, y) => {
+
+    const updateBedPosition = (
+        id,
+        x,
+        y
+    ) => {
+
+        if (
+            isOverlapping(
+                x,
+                y,
+                70,
+                140,
+                id
+            )
+        ) {
+            alert(
+                "Cannot overlap another item"
+            );
+            return;
+        }
 
         setBeds(
             beds.map(item =>
@@ -242,7 +216,27 @@ const RoomDesigner = () => {
         );
     };
 
-    const updateTablePosition = (id, x, y) => {
+    const updateTablePosition = (
+        id,
+        x,
+        y
+    ) => {
+
+        if (
+            isOverlapping(
+                x,
+                y,
+                60,
+                50,
+                id
+            )
+        ) {
+            alert(
+                "Cannot overlap another item"
+            );
+            return;
+        }
+
         setTables(
             tables.map(item =>
                 item.id === id
@@ -252,7 +246,27 @@ const RoomDesigner = () => {
         );
     };
 
-    const updateCupboardPosition = (id, x, y) => {
+    const updateCupboardPosition = (
+        id,
+        x,
+        y
+    ) => {
+
+        if (
+            isOverlapping(
+                x,
+                y,
+                70,
+                60,
+                id
+            )
+        ) {
+            alert(
+                "Cannot overlap another item"
+            );
+            return;
+        }
+
         setCupboards(
             cupboards.map(item =>
                 item.id === id
@@ -281,6 +295,56 @@ const RoomDesigner = () => {
         alert("Layout Saved Successfully");
     };
 
+    const ITEM_GAP = 20;
+
+    const getNextPosition = (existingItems, itemWidth, itemHeight) => {
+        const cols = Math.floor(canvasWidth / (itemWidth + ITEM_GAP)) || 1;
+        const index = existingItems.length;
+        const col = index % cols;
+        const row = Math.floor(index / cols);
+        return {
+            x: col * (itemWidth + ITEM_GAP),
+            y: row * (itemHeight + ITEM_GAP)
+        };
+    };
+    const isOverlapping = (
+        x,
+        y,
+        width,
+        height,
+        currentId
+    ) => {
+
+        const items = [
+            ...beds,
+            ...tables,
+            ...cupboards
+        ];
+
+        return items.some(item => {
+
+            if (item.id === currentId)
+                return false;
+
+            const w =
+                item.label.includes("Bed")
+                    ? 70
+                    : 60;
+
+            const h =
+                item.label.includes("Bed")
+                    ? 140
+                    : 60;
+
+            return (
+                x < item.x + w &&
+                x + width > item.x &&
+                y < item.y + h &&
+                y + height > item.y
+            );
+        });
+    };
+
     return (
         <AdminLayout>
             <div className="space-y-5">
@@ -300,7 +364,26 @@ const RoomDesigner = () => {
                         <input type="text" value={`Beds : ${beds.length}`} readOnly className="border rounded-lg p-3 bg-gray-100" />
                     </div>
                 </div>
-                
+
+                <div className="bg-white rounded-xl shadow p-5 canvas-size-input">
+                    <h3 className="font-semibold mb-4">
+                        Canvas Size
+                    </h3>
+                    <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block mb-2">
+                                Width (Min 400)
+                            </label>
+                            <input type="number" min="400" value={canvasWidth} onChange={(e) => setCanvasWidth(Math.max(400, Number(e.target.value)))} className="w-full border rounded-lg p-3" />
+                        </div>
+                        <div>
+                            <label className="block mb-2">
+                                Height (Min 300)
+                            </label>
+                            <input type="number" min="300" value={canvasHeight} onChange={(e) => setCanvasHeight(Math.max(300, Number(e.target.value)))} className="w-full border rounded-lg p-3" />
+                        </div>
+                    </div>
+                </div>
                 <RoomToolbar
                     addBed={addBed}
                     removeBed={removeBed}
@@ -322,8 +405,10 @@ const RoomDesigner = () => {
                     updateBedPosition={updateBedPosition}
                     updateTablePosition={updateTablePosition}
                     updateCupboardPosition={updateCupboardPosition}
+                    canvasWidth={canvasWidth}
+                    canvasHeight={canvasHeight}
                 />
-                
+
             </div>
         </AdminLayout>
     );

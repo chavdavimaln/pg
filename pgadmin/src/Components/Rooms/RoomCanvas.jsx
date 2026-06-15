@@ -12,19 +12,21 @@ const RoomCanvas = ({
     setSelectedItem,
     updateBedPosition,
     updateTablePosition,
-    updateCupboardPosition
+    updateCupboardPosition,
+    canvasWidth,
+    canvasHeight
 }) => {
     return (
         <div className="flex justify-center">
-            <div className="relative w-full max-w-4xl aspect-[4/3] bg-white border-4 border-gray-400 rounded-xl overflow-hidden shadow-lg">
+            <div className="relative w-full max-w-4xl aspect-[4/3] bg-white border-4 border-gray-400 rounded-xl overflow-hidden shadow-lg" style={{ minWidth: "400px", minHeight: "300px", width: `${canvasWidth}px`, height: `${canvasHeight}px` }}>
                 {beds.map(item => (
-                    <BedItem key={item.id} item={item} selected={selectedItem?.id === item.id} onSelect={() =>setSelectedItem({ ...item, type: "bed"})} onDrag={updateBedPosition} />
+                    <BedItem key={item.id} item={item} selected={selectedItem?.id === item.id} onSelect={() => setSelectedItem({ ...item, type: "bed" })} onDrag={updateBedPosition} />
                 ))}
                 {tables.map(item => (
-                    <TableItem key={item.id} item={item} selected={selectedItem?.id === item.id} onSelect={() =>setSelectedItem({ ...item, type: "table"})} onDrag={updateTablePosition} />
+                    <TableItem key={item.id} item={item} selected={selectedItem?.id === item.id} onSelect={() => setSelectedItem({ ...item, type: "table" })} onDrag={updateTablePosition} />
                 ))}
                 {cupboards.map(item => (
-                    <CupboardItem key={item.id} item={item} selected={selectedItem?.id === item.id} onSelect={() =>setSelectedItem({ ...item, type: "cupboard"})} onDrag={updateCupboardPosition} />
+                    <CupboardItem key={item.id} item={item} selected={selectedItem?.id === item.id} onSelect={() => setSelectedItem({ ...item, type: "cupboard" })} onDrag={updateCupboardPosition} />
                 ))}
             </div>
         </div>
