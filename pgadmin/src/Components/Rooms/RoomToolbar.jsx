@@ -1,17 +1,8 @@
+// pgadmin/src/Components/Rooms/RoomToolbar.jsx
+
 import React from "react";
 
-const RoomToolbar = ({
-    addBed,
-    removeBed,
-    addTable,
-    removeTable,
-    addCupboard,
-    removeCupboard,
-    deleteSelectedItem,
-    bedCount,
-    tableCount,
-    cupboardCount
-}) => {
+const RoomToolbar = ({ addBed, removeBed, addTable, removeTable, addCupboard, removeCupboard, deleteSelectedItem, bedCount, tableCount, cupboardCount }) => {
 
     return (
         <div className="bg-white rounded-xl shadow p-4">

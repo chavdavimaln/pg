@@ -8,6 +8,7 @@ import Dashboard from "./Pages/Dashboard/Dashboard";
 
 import RoomList from "./Pages/Rooms/RoomList";
 import RoomDesigner from "./Pages/Rooms/RoomDesigner";
+import RoomAdd from "./Pages/Rooms/RoomAdd";
 
 import './App.css';
 
@@ -26,7 +27,7 @@ function App() {
                 />
                 <Route
                     path="/rooms/add"
-                    element={<RoomList />}
+                    element={<RoomAdd />}
                 />
 
                 <Route

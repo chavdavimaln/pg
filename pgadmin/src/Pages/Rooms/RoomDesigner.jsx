@@ -1,9 +1,13 @@
+// pgadmin/src/Pages/Rooms/RoomDesigner.jsx
+
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import AdminLayout from "../../Components/Layout/AdminLayout";
 import RoomCanvas from "../../Components/Rooms/RoomCanvas";
 import RoomToolbar from "../../Components/Rooms/RoomToolbar";
 import roomLayout from "../../Data/RoomLayout";
+// import { calculateResponsiveLayout } from "../../Utils/roomLayoutEngine";
+
 
 const getRoomType = (beds) => {
     if (beds === 1) return "Single Room";
@@ -26,75 +30,159 @@ const RoomDesigner = () => {
     const [canvasWidth, setCanvasWidth] = useState(600);
     const [canvasHeight, setCanvasHeight] = useState(400);
 
+    // useEffect(() => {
+    //     const saved = localStorage.getItem(`room-layout-${id}`);
+    //     if (saved) {
+    //         const layout = JSON.parse(saved);
+    //         setRoomName(layout.roomName || "");
+    //         setBeds( (layout.beds || []).map((item, index) => ({ ...item, label: item.label || `Bed-${index + 1}` })) );
+    //         setTables( (layout.tables || []).map((item, index) => ({ ...item, label: item.label || `Table-${index + 1}` })) );
+    //         setCupboards( (layout.cupboards || []).map((item, index) => ({ ...item, label: item.label || `Cupboard-${index + 1}` })) );
+    //     } else {
+    //         setRoomName(roomData?.roomName || "");
+    //         setBeds(
+    //             (roomData?.beds || [
+    //                 {
+    //                     id: "bed-1",
+    //                     x: 50,
+    //                     y: 50
+    //                 }
+    //             ]).map((item, index) => ({
+    //                 ...item,
+    //                 label: `Bed-${index + 1}`
+    //             }))
+    //         );
+
+    //         setTables([
+    //             {
+    //                 id: "table-1",
+    //                 label: "Table-1",
+    //                 x: 300,
+    //                 y: 100
+    //             }
+    //         ]);
+
+    //         setCupboards([
+    //             {
+    //                 id: "cupboard-1",
+    //                 label: "Cupboard-1",
+    //                 x: 450,
+    //                 y: 100
+    //             }
+    //         ]);
+    //     }
+
+    // }, [id, roomData]);
+
+    // useEffect(() => {
+    //     const result =
+    //         calculateResponsiveLayout(
+    //             beds,
+    //             tables,
+    //             cupboards,
+    //             canvasWidth,
+    //             canvasHeight
+    //         );
+    //     const updatedBeds =
+    //         result.items.filter(
+    //             item =>
+    //                 item.type === "bed"
+    //         );
+    //     const updatedTables =
+    //         result.items.filter(
+    //             item =>
+    //                 item.type === "table"
+    //         );
+    //     const updatedCupboards =
+    //         result.items.filter(
+    //             item =>
+    //                 item.type === "cupboard"
+    //         );
+    //     setBeds(updatedBeds);
+    //     setTables(updatedTables);
+    //     setCupboards(updatedCupboards);
+    //     if (
+    //         result.canvasHeight >
+    //         canvasHeight
+    //     ) {
+    //         setCanvasHeight(
+    //             result.canvasHeight
+    //         );
+    //     }
+
+    // }, [canvasWidth]);
     useEffect(() => {
 
-        const saved = localStorage.getItem(`room-layout-${id}`);
+        const saved =
+            localStorage.getItem(
+                `room-layout-${id}`
+            );
 
         if (saved) {
 
-            const layout = JSON.parse(saved);
+            const layout =
+                JSON.parse(saved);
 
-            setRoomName(layout.roomName || "");
+            setRoomName(
+                layout.roomName || ""
+            );
 
             setBeds(
-                (layout.beds || []).map((item, index) => ({
-                    ...item,
-                    label: item.label || `Bed-${index + 1}`
-                }))
+                layout.beds || []
             );
 
             setTables(
-                (layout.tables || []).map((item, index) => ({
-                    ...item,
-                    label: item.label || `Table-${index + 1}`
-                }))
+                layout.tables || []
             );
 
             setCupboards(
-                (layout.cupboards || []).map((item, index) => ({
-                    ...item,
-                    label: item.label || `Cupboard-${index + 1}`
-                }))
+                layout.cupboards || []
+            );
+
+            setCanvasWidth(
+                layout.canvasWidth || 600
+            );
+
+            setCanvasHeight(
+                layout.canvasHeight || 400
             );
 
         } else {
 
-            setRoomName(roomData?.roomName || "");
+            const room =
+                roomData;
 
-            setBeds(
-                (roomData?.beds || [
-                    {
-                        id: "bed-1",
-                        x: 50,
-                        y: 50
-                    }
-                ]).map((item, index) => ({
-                    ...item,
-                    label: `Bed-${index + 1}`
-                }))
-            );
+            if (room) {
 
-            setTables([
-                {
-                    id: "table-1",
-                    label: "Table-1",
-                    x: 300,
-                    y: 100
-                }
-            ]);
+                setRoomName(
+                    room.roomName
+                );
 
-            setCupboards([
-                {
-                    id: "cupboard-1",
-                    label: "Cupboard-1",
-                    x: 450,
-                    y: 100
-                }
-            ]);
+                setBeds(
+                    room.beds || []
+                );
+
+                setTables(
+                    room.tables || []
+                );
+
+                setCupboards(
+                    room.cupboards || []
+                );
+
+                setCanvasWidth(
+                    room.canvasWidth || 600
+                );
+
+                setCanvasHeight(
+                    room.canvasHeight || 400
+                );
+
+            }
+
         }
 
     }, [id, roomData]);
-
     const addBed = () => {
         if (beds.length >= 6) return;
         const pos = getNextPosition([...beds, ...tables, ...cupboards], 70, 140);
@@ -170,20 +258,73 @@ const RoomDesigner = () => {
         setCupboards(updatedCupboards);
     };
 
+    // const deleteSelectedItem = () => {
+    //     if (selectedItem.type === "bed" && beds.length === 1) {
+    //         alert("At least one Bed is required");
+    //         return;
+    //     }
+    //     if (selectedItem.type === "table" && tables.length === 1) {
+    //         alert("At least one Table is required");
+    //         return;
+    //     }
+    //     if (selectedItem.type === "cupboard" && cupboards.length === 1) {
+    //         alert("At least one Cupboard is required");
+    //         return;
+    //     }
+    //     // setSelectedItem(null);
+    // };
     const deleteSelectedItem = () => {
-        if (selectedItem.type === "bed" && beds.length === 1) {
-            alert("At least one Bed is required");
+
+        if (!selectedItem)
             return;
+
+        if (
+            selectedItem.type === "bed"
+        ) {
+
+            if (beds.length <= 1) {
+
+                alert(
+                    "At least one bed required"
+                );
+
+                return;
+            }
+
+            setBeds(
+                beds.filter(
+                    item =>
+                        item.id !== selectedItem.id
+                )
+            );
         }
-        if (selectedItem.type === "table" && tables.length === 1) {
-            alert("At least one Table is required");
-            return;
+
+        if (
+            selectedItem.type === "table"
+        ) {
+
+            setTables(
+                tables.filter(
+                    item =>
+                        item.id !== selectedItem.id
+                )
+            );
         }
-        if (selectedItem.type === "cupboard" && cupboards.length === 1) {
-            alert("At least one Cupboard is required");
-            return;
+
+        if (
+            selectedItem.type === "cupboard"
+        ) {
+
+            setCupboards(
+                cupboards.filter(
+                    item =>
+                        item.id !== selectedItem.id
+                )
+            );
         }
-        // setSelectedItem(null);
+
+        setSelectedItem(null);
+
     };
 
     const updateBedPosition = (
@@ -217,26 +358,11 @@ const RoomDesigner = () => {
     };
 
     const updateTablePosition = (
-        id,
-        x,
-        y
-    ) => {
-
-        if (
-            isOverlapping(
-                x,
-                y,
-                60,
-                50,
-                id
-            )
-        ) {
-            alert(
-                "Cannot overlap another item"
-            );
+        id, x, y) => {
+        if (isOverlapping(x, y, 60, 50, id)) {
+            alert("Cannot overlap another item");
             return;
         }
-
         setTables(
             tables.map(item =>
                 item.id === id
@@ -268,23 +394,48 @@ const RoomDesigner = () => {
         }
 
         setCupboards(
-            cupboards.map(item =>
-                item.id === id
-                    ? { ...item, x, y }
-                    : item
-            )
+            cupboards.map(item => item.id === id ? { ...item, x, y } : item)
         );
     };
 
+    // const saveLayout = () => {
+
+    //     const layout = {
+    //         roomId: id,
+    //         roomName,
+    //         roomType: getRoomType(beds.length),
+    //         beds,
+    //         tables,
+    //         cupboards
+    //     };
+
+    //     localStorage.setItem(
+    //         `room-layout-${id}`,
+    //         JSON.stringify(layout)
+    //     );
+
+    //     alert("Layout Saved Successfully");
+    // };
     const saveLayout = () => {
 
         const layout = {
+
             roomId: id,
+
             roomName,
-            roomType: getRoomType(beds.length),
+
+            roomType:
+                getRoomType(
+                    beds.length
+                ),
+
+            canvasWidth,
+            canvasHeight,
+
             beds,
             tables,
             cupboards
+
         };
 
         localStorage.setItem(
@@ -292,7 +443,10 @@ const RoomDesigner = () => {
             JSON.stringify(layout)
         );
 
-        alert("Layout Saved Successfully");
+        alert(
+            "Layout Saved Successfully"
+        );
+
     };
 
     const ITEM_GAP = 20;
