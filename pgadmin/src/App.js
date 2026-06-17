@@ -24,6 +24,10 @@ function App() {
                     path="/rooms"
                     element={<RoomList />}
                 />
+                <Route
+                    path="/rooms/add"
+                    element={<RoomList />}
+                />
 
                 <Route
                     path="/rooms/designer/:id"
