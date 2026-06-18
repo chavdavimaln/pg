@@ -11,14 +11,14 @@ const roomLayout = [
             {
                 id: "bed-1",
                 x: 50,
-                y: 50
+                y: 50,
             },
             {
                 id: "bed-2",
                 x: 200,
-                y: 50
-            }
-        ]
+                y: 50,
+            },
+        ],
     },
     {
         id: 2,
@@ -31,19 +31,19 @@ const roomLayout = [
             {
                 id: "bed-1",
                 x: 50,
-                y: 50
+                y: 50,
             },
             {
                 id: "bed-2",
                 x: 200,
-                y: 50
+                y: 50,
             },
             {
                 id: "bed-3",
                 x: 120,
-                y: 180
-            }
-        ]
+                y: 180,
+            },
+        ],
     },
     {
         id: 3,
@@ -56,30 +56,30 @@ const roomLayout = [
             {
                 id: "bed-1",
                 x: 20,
-                y: 20
+                y: 20,
             },
             {
                 id: "bed-2",
                 x: 180,
-                y: 20
+                y: 20,
             },
             {
                 id: "bed-3",
                 x: 20,
-                y: 150
+                y: 150,
             },
             {
                 id: "bed-4",
                 x: 180,
-                y: 150
+                y: 150,
             },
             {
                 id: "bed-5",
                 x: 100,
-                y: 280
-            }
-        ]
-    }
+                y: 280,
+            },
+        ],
+    },
 ];
 
 export default roomLayout;
