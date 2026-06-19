@@ -84,6 +84,8 @@ const RoomDesigner = () => {
             {
                 id: Date.now(),
                 label: `Bed-${beds.length + 1}`,
+                width: 80,
+                height: 120,
                 ...pos,
             },
         ]);
@@ -96,12 +98,18 @@ const RoomDesigner = () => {
     };
 
     const addTable = () => {
+        if (tables.length >= 6) {
+            alert("Maximum 6 tables allowed");
+            return;
+        }
         const pos = getNextPosition([...beds, ...tables, ...cupboards], 60, 50);
         setTables([
             ...tables,
             {
                 id: Date.now(),
                 label: `Table-${tables.length + 1}`,
+                width: 60,
+                height: 60,
                 ...pos,
             },
         ]);
@@ -117,12 +125,18 @@ const RoomDesigner = () => {
     };
 
     const addCupboard = () => {
+        if (cupboards.length >= 6) {
+            alert("Maximum 6 cupboards allowed");
+            return;
+        }
         const pos = getNextPosition([...beds, ...tables, ...cupboards], 70, 60);
         setCupboards([
             ...cupboards,
             {
                 id: Date.now(),
                 label: `Cupboard-${cupboards.length + 1}`,
+                width: 80,
+                height: 60,
                 ...pos,
             },
         ]);
@@ -202,49 +216,47 @@ const RoomDesigner = () => {
     // };
     const saveLayout = () => {
         const rooms = JSON.parse(localStorage.getItem("rooms")) || [];
-
         const updatedRooms = rooms.map((room) => {
             if (String(room.id) === String(id)) {
                 return {
                     ...room,
-
                     roomType: getRoomType(beds.length),
-
                     canvasWidth,
                     canvasHeight,
-
                     beds,
                     tables,
                     cupboards,
                 };
             }
-
             return room;
         });
-
         localStorage.setItem("rooms", JSON.stringify(updatedRooms));
-
         alert("Layout Updated Successfully");
     };
 
-    const ITEM_GAP = 20;
+    // const ITEM_GAP = 20;
+    const GRID_SIZE = 40;
 
     const getNextPosition = (existingItems, itemWidth, itemHeight) => {
-        const cols = Math.floor(canvasWidth / (itemWidth + ITEM_GAP)) || 1;
-        const index = existingItems.length;
-        const col = index % cols;
-        const row = Math.floor(index / cols);
-        return {
-            x: col * (itemWidth + ITEM_GAP),
-            y: row * (itemHeight + ITEM_GAP),
-        };
+        const cols = Math.floor(canvasWidth / GRID_SIZE);
+        for (let row = 0; row < 100; row++) {
+            for (let col = 0; col < cols; col++) {
+                const x = col * GRID_SIZE;
+                const y = row * GRID_SIZE;
+                const occupied = existingItems.some((item) => item.x === x && item.y === y);
+                if (!occupied) {
+                    return { x, y };
+                }
+            }
+        }
+        return { x: 0, y: 0 };
     };
     const isOverlapping = (x, y, width, height, currentId) => {
         const items = [...beds, ...tables, ...cupboards];
         return items.some((item) => {
             if (item.id === currentId) return false;
-            const w = item.label.includes("Bed") ? 70 : 60;
-            const h = item.label.includes("Bed") ? 140 : 60;
+            const w = item.width || 60;
+            const h = item.height || 60;
             return x < item.x + w && x + width > item.x && y < item.y + h && y + height > item.y;
         });
     };
@@ -258,7 +270,6 @@ const RoomDesigner = () => {
                         Save Layout
                     </button>
                 </div>
-
                 <div className="bg-white rounded-xl shadow p-5">
                     <div className="grid md:grid-cols-3 gap-4">
                         <input
@@ -275,7 +286,6 @@ const RoomDesigner = () => {
                         />
                     </div>
                 </div>
-
                 <div className="bg-white rounded-xl shadow p-5 canvas-size-input">
                     <h3 className="font-semibold mb-4">Canvas Size</h3>
                     <div className="grid md:grid-cols-2 gap-4">

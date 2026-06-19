@@ -21,8 +21,20 @@ const RoomCanvas = ({
         <div className="w-full overflow-auto">
             <div className="flex justify-center">
                 <div
-                    className="relative bg-white border-4 border-gray-400 rounded-xl shadow-lg mx-auto flex-shrink-0"
-                    style={{ width: canvasWidth, height: canvasHeight, minWidth: 400, minHeight: 300 }}
+                    className="relative border-4 border-gray-300 rounded-xl shadow-lg"
+                    style={{
+                        width: canvasWidth,
+                        height: canvasHeight,
+
+                        backgroundImage: `
+                        linear-gradient(#dbe3ee 1px, transparent 1px),
+                        linear-gradient(90deg, #dbe3ee 1px, transparent 1px)
+                        `,
+                        backgroundSize: "40px 40px",
+
+                        minWidth: 400,
+                        minHeight: 300,
+                    }}
                 >
                     {beds.map((item) => (
                         <BedItem

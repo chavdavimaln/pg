@@ -31,57 +31,17 @@ const RoomAdd = () => {
     const [selectedItem, setSelectedItem] = useState(null);
     const generateLayout = () => {
         const autoWidth = Number(roomData.bedCount) <= 2 ? 600 : Number(roomData.bedCount) <= 4 ? 900 : 1200;
-
         const autoHeight = Number(roomData.bedCount) <= 2 ? 400 : Number(roomData.bedCount) <= 4 ? 600 : 800;
-
         const result = calculateResponsiveLayout(Number(roomData.bedCount), autoWidth, autoHeight);
-
         setBeds(result.beds);
-
         setTables(result.tables);
-
         setCupboards(result.cupboards);
-
         setRoomData((prev) => ({
             ...prev,
             canvasWidth: result.canvasWidth,
             canvasHeight: result.canvasHeight,
         }));
     };
-    // const saveRoom = () => {
-    //     if (beds.length === 0) {
-    //         alert("Please generate layout first");
-    //         return;
-    //     }
-    //     if (!roomData.roomNumber || !roomData.roomType) {
-    //         alert("Please fill all fields");
-    //         return;
-    //     }
-    //     const room = {
-    //         id: Date.now(),
-    //         roomNumber: roomData.roomNumber,
-    //         roomType: roomData.roomType,
-    //         canvasWidth: roomData.canvasWidth,
-    //         canvasHeight: roomData.canvasHeight,
-    //         beds,
-    //         tables,
-    //         cupboards,
-    //     };
-    //     const existingRooms = JSON.parse(localStorage.getItem("rooms")) || [];
-    //     existingRooms.push(room);
-    //     localStorage.setItem("rooms", JSON.stringify(existingRooms));
-    //     alert("Room Added Successfully");
-    //     setRoomData({
-    //         roomNumber: generateRoomNumber(),
-    //         roomType: "Single Room",
-    //         bedCount: 1,
-    //         canvasWidth: 600,
-    //         canvasHeight: 400,
-    //     });
-    //     setBeds([]);
-    //     setTables([]);
-    //     setCupboards([]);
-    // };
     const saveRoom = () => {
         if (beds.length === 0) {
             alert("Please generate layout first");
@@ -164,7 +124,6 @@ const RoomAdd = () => {
                             readOnly
                             className=" border p-3 rounded-lg bg-gray-100 cursor-not-allowed "
                         />
-
                         <select
                             value={roomData.roomType}
                             onChange={(e) => setRoomData({ ...roomData, roomType: e.target.value })}

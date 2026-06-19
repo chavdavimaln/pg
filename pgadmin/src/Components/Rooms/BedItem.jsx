@@ -9,14 +9,15 @@ const BedItem = ({ item, onDrag, selected, onSelect }) => {
         <Draggable
             nodeRef={nodeRef}
             bounds="parent"
-            defaultPosition={{ x: item.x, y: item.y }}
+            grid={[40, 40]}
+            position={{ x: item.x, y: item.y }}
             onStop={(e, data) => onDrag(item.id, data.x, data.y)}
         >
             <div
                 ref={nodeRef}
                 onClick={onSelect}
                 className={`absolute bg-blue-600 text-white text-[11px] rounded-lg flex items-center justify-center cursor-move border-2 ${selected ? "border-red-500" : "border-blue-700"}`}
-                style={{ width: item.width || 70, height: item.height || 140 }}
+                style={{ width: item.width || 80, height: item.height || 140 }}
             >
                 {item.label}
             </div>

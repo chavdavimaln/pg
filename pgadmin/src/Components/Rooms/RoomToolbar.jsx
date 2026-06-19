@@ -33,7 +33,13 @@ const RoomToolbar = ({
                     Remove Last Bed
                 </button>
 
-                <button onClick={addTable} className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700">
+                <button
+                    onClick={addTable}
+                    disabled={tableCount >= 6}
+                    className={`px-4 py-2 text-white rounded-lg ${
+                        tableCount >= 6 ? "bg-gray-400 cursor-not-allowed" : "bg-amber-600 hover:bg-amber-700"
+                    }`}
+                >
                     Add Table
                 </button>
 
@@ -47,7 +53,10 @@ const RoomToolbar = ({
 
                 <button
                     onClick={addCupboard}
-                    className="px-4 py-2 bg-green-700 text-white rounded-lg hover:bg-green-800"
+                    disabled={cupboardCount >= 6}
+                    className={`px-4 py-2 text-white rounded-lg ${
+                        cupboardCount >= 6 ? "bg-gray-400 cursor-not-allowed" : "bg-green-700 hover:bg-green-800"
+                    }`}
                 >
                     Add Cupboard
                 </button>
@@ -69,11 +78,11 @@ const RoomToolbar = ({
             </div>
 
             <div className="mt-4 flex flex-wrap gap-6 text-sm md:text-base font-semibold">
-                <span className="text-blue-600">Beds : {bedCount}</span>
+                <span className="text-blue-600">Beds : {bedCount}/6</span>
 
-                <span className="text-amber-600">Tables : {tableCount}</span>
+                <span className="text-amber-600">Tables : {tableCount}/6</span>
 
-                <span className="text-green-700">Cupboards : {cupboardCount}</span>
+                <span className="text-green-700">Cupboards : {cupboardCount}/6</span>
             </div>
         </div>
     );

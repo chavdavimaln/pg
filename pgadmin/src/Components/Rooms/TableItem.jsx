@@ -9,7 +9,8 @@ const TableItem = ({ item, onDrag, selected, onSelect }) => {
         <Draggable
             nodeRef={nodeRef}
             bounds="parent"
-            defaultPosition={{ x: item.x, y: item.y }}
+            position={{ x: item.x, y: item.y }}
+            grid={[40, 40]}
             onStop={(e, data) => onDrag(item.id, data.x, data.y)}
         >
             <div
