@@ -112,6 +112,24 @@ const RoomAdd = () => {
 
         setCupboards(cupboards.map((item) => (item.id === id ? { ...item, x, y } : item)));
     };
+    const room = {
+        ...
+        beds,
+        tables,
+        cupboards,
+
+        doors: [
+            {
+                id: Date.now() + 999,
+                label: "Door",
+                x: 0,
+                y: roomData.canvasHeight - 40,
+                width: 80,
+                height: 20,
+                rotation: 0,
+            },
+        ],
+    };
     return (
         <AdminLayout>
             <div className="space-y-6">

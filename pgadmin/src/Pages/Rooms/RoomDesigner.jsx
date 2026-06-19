@@ -16,66 +16,31 @@ const getRoomType = (beds) => {
     if (beds >= 5) return "Common Room";
     return "Room";
 };
-
 const RoomDesigner = () => {
     const { id } = useParams();
-    // const roomData = roomLayout.find((room) => room.id === Number(id));
     const rooms = JSON.parse(localStorage.getItem("rooms")) || [];
     const roomData = rooms.find((room) => String(room.id) === String(id));
-    // const [roomName, setRoomName] = useState("");
     const [beds, setBeds] = useState([]);
     const [tables, setTables] = useState([]);
     const [cupboards, setCupboards] = useState([]);
+    const [doors, setDoors] = useState([]);
     const [selectedItem, setSelectedItem] = useState(null);
     const [canvasWidth, setCanvasWidth] = useState(600);
     const [canvasHeight, setCanvasHeight] = useState(400);
 
-    // useEffect(() => {
-    //     if (!roomData) return;
-    //     setBeds(roomData.beds || []);
-    //     setTables(roomData.tables || []);
-    //     setCupboards(roomData.cupboards || []);
-    //     setCanvasWidth(roomData.canvasWidth || 600);
-    //     setCanvasHeight(roomData.canvasHeight || 400);
-    // }, [id]);
-    // useEffect(() => {
-    //     const saved = localStorage.getItem(`room-layout-${id}`);
-    //     if (saved) {
-    //         const layout = JSON.parse(saved);
-    //         setRoomName(layout.roomName || "");
-    //         setBeds(layout.beds || []);
-    //         setTables(layout.tables || []);
-    //         setCupboards(layout.cupboards || []);
-    //         setCanvasWidth(layout.canvasWidth || 600);
-    //         setCanvasHeight(layout.canvasHeight || 400);
-    //     } else {
-    //         const room = roomData;
+    // setDoors(room.doors || []);
 
-    //         if (room) {
-    //             setRoomName(room.roomName);
-    //             setBeds(room.beds || []);
-    //             setTables(room.tables || []);
-    //             setCupboards(room.cupboards || []);
-    //             setCanvasWidth(room.canvasWidth || 600);
-    //             setCanvasHeight(room.canvasHeight || 400);
-    //         }
-    //     }
-    // }, [id, roomData]);
     useEffect(() => {
         const rooms = JSON.parse(localStorage.getItem("rooms")) || [];
-
         const room = rooms.find((item) => String(item.id) === String(id));
-
         if (!room) return;
-
         setBeds(room.beds || []);
         setTables(room.tables || []);
         setCupboards(room.cupboards || []);
-
         setCanvasWidth(room.canvasWidth || 600);
-
         setCanvasHeight(room.canvasHeight || 400);
     }, [id]);
+
     const addBed = () => {
         if (beds.length >= 6) return;
         const pos = getNextPosition([...beds, ...tables, ...cupboards], 70, 140);
@@ -141,6 +106,23 @@ const RoomDesigner = () => {
             },
         ]);
     };
+    const addDoor = () => {
+        if (doors.length >= 1) {
+            alert("Only one door allowed");
+            return;
+        }
+        setDoors([
+            {
+                id: Date.now(),
+                label: "Door",
+                x: 0,
+                y: canvasHeight - 40,
+                width: 80,
+                height: 20,
+                rotation: 0,
+            },
+        ]);
+    };
 
     const removeCupboard = () => {
         if (cupboards.length <= 1) return;
@@ -171,9 +153,77 @@ const RoomDesigner = () => {
             setCupboards(cupboards.filter((item) => item.id !== selectedItem.id));
         }
 
+        if (
+            selectedItem.type === "door"
+        ) {
+            setDoors(
+                doors.filter(
+                    (item) =>
+                        item.id !== selectedItem.id
+                )
+            );
+        }
         setSelectedItem(null);
     };
 
+    const rotateSelectedItem = () => {
+
+        if (!selectedItem) {
+            alert("Select item");
+            return;
+        }
+
+        const updateRotation = (
+            items,
+            setter
+        ) => {
+            setter(
+                items.map((item) =>
+                    item.id === selectedItem.id
+                        ? {
+                            ...item,
+                            rotation:
+                                ((item.rotation || 0) +
+                                    90) %
+                                360,
+                        }
+                        : item
+                )
+            );
+        };
+
+        if (
+            selectedItem.type === "bed"
+        )
+            updateRotation(
+                beds,
+                setBeds
+            );
+
+        if (
+            selectedItem.type === "table"
+        )
+            updateRotation(
+                tables,
+                setTables
+            );
+
+        if (
+            selectedItem.type === "cupboard"
+        )
+            updateRotation(
+                cupboards,
+                setCupboards
+            );
+
+        if (
+            selectedItem.type === "door"
+        )
+            updateRotation(
+                doors,
+                setDoors
+            );
+    };
     const updateBedPosition = (id, x, y) => {
         if (isOverlapping(x, y, 70, 140, id)) {
             alert("Cannot overlap another item");
@@ -200,38 +250,39 @@ const RoomDesigner = () => {
         setCupboards(cupboards.map((item) => (item.id === id ? { ...item, x, y } : item)));
     };
 
-    // const saveLayout = () => {
-    // const layout = {
-    //     roomId: id,
-    //     // roomName,
-    //     roomType: getRoomType(beds.length),
-    //     canvasWidth,
-    //     canvasHeight,
-    //     beds,
-    //     tables,
-    //     cupboards,
-    // };
-    // localStorage.setItem(`room-layout-${id}`, JSON.stringify(layout));
-    // alert("Layout Saved Successfully");
-    // };
+    const updateDoorPosition = (
+        id, x, y) => {
+        setDoors(
+            doors.map((item) =>
+                item.id === id
+                    ? { ...item, x, y }
+                    : item
+            )
+        );
+    };
     const saveLayout = () => {
         const rooms = JSON.parse(localStorage.getItem("rooms")) || [];
         const updatedRooms = rooms.map((room) => {
             if (String(room.id) === String(id)) {
                 return {
                     ...room,
-                    roomType: getRoomType(beds.length),
+                    roomType: getRoomType(
+                        beds.length
+                    ),
                     canvasWidth,
                     canvasHeight,
                     beds,
                     tables,
                     cupboards,
+                    doors,
                 };
             }
-            return room;
         });
+
         localStorage.setItem("rooms", JSON.stringify(updatedRooms));
+
         alert("Layout Updated Successfully");
+
     };
 
     // const ITEM_GAP = 20;
@@ -260,6 +311,7 @@ const RoomDesigner = () => {
             return x < item.x + w && x + width > item.x && y < item.y + h && y + height > item.y;
         });
     };
+
 
     return (
         <AdminLayout>
@@ -322,16 +374,21 @@ const RoomDesigner = () => {
                     bedCount={beds.length}
                     tableCount={tables.length}
                     cupboardCount={cupboards.length}
+                    rotateSelectedItem={rotateSelectedItem}
+                    addDoor={addDoor}
+                    doorCount={doors.length}
                 />
                 <RoomCanvas
                     beds={beds}
                     tables={tables}
                     cupboards={cupboards}
+                    doors={doors}
                     selectedItem={selectedItem}
                     setSelectedItem={setSelectedItem}
                     updateBedPosition={updateBedPosition}
                     updateTablePosition={updateTablePosition}
                     updateCupboardPosition={updateCupboardPosition}
+                    updateDoorPosition={updateDoorPosition}
                     canvasWidth={canvasWidth}
                     canvasHeight={canvasHeight}
                 />

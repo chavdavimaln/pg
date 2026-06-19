@@ -13,6 +13,9 @@ const RoomToolbar = ({
     bedCount,
     tableCount,
     cupboardCount,
+    rotateSelectedItem,
+    addDoor,
+    doorCount,
 }) => {
     return (
         <div className="bg-white rounded-xl shadow p-4">
@@ -36,9 +39,8 @@ const RoomToolbar = ({
                 <button
                     onClick={addTable}
                     disabled={tableCount >= 6}
-                    className={`px-4 py-2 text-white rounded-lg ${
-                        tableCount >= 6 ? "bg-gray-400 cursor-not-allowed" : "bg-amber-600 hover:bg-amber-700"
-                    }`}
+                    className={`px-4 py-2 text-white rounded-lg ${tableCount >= 6 ? "bg-gray-400 cursor-not-allowed" : "bg-amber-600 hover:bg-amber-700"
+                        }`}
                 >
                     Add Table
                 </button>
@@ -54,9 +56,8 @@ const RoomToolbar = ({
                 <button
                     onClick={addCupboard}
                     disabled={cupboardCount >= 6}
-                    className={`px-4 py-2 text-white rounded-lg ${
-                        cupboardCount >= 6 ? "bg-gray-400 cursor-not-allowed" : "bg-green-700 hover:bg-green-800"
-                    }`}
+                    className={`px-4 py-2 text-white rounded-lg ${cupboardCount >= 6 ? "bg-gray-400 cursor-not-allowed" : "bg-green-700 hover:bg-green-800"
+                        }`}
                 >
                     Add Cupboard
                 </button>
@@ -75,6 +76,22 @@ const RoomToolbar = ({
                 >
                     Delete Selected Item
                 </button>
+                <button
+                    onClick={rotateSelectedItem}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-lg"
+                >
+                    Rotate 90°
+                </button>
+                <button
+                    onClick={addDoor}
+                    disabled={doorCount >= 1}
+                    className={`px-4 py-2 text-white rounded-lg ${doorCount >= 1
+                        ? "bg-gray-400"
+                        : "bg-gray-700"
+                        }`}
+                >
+                    Add Door
+                </button>
             </div>
 
             <div className="mt-4 flex flex-wrap gap-6 text-sm md:text-base font-semibold">
@@ -83,6 +100,7 @@ const RoomToolbar = ({
                 <span className="text-amber-600">Tables : {tableCount}/6</span>
 
                 <span className="text-green-700">Cupboards : {cupboardCount}/6</span>
+                <span className="text-gray-700">Door : {doorCount}/1</span>
             </div>
         </div>
     );
