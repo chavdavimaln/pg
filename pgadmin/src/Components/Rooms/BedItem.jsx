@@ -9,7 +9,7 @@ const BedItem = ({ item, onDrag, selected, onSelect }) => {
         <Draggable
             nodeRef={nodeRef}
             bounds="parent"
-            grid={[80, 140]}
+            grid={[40, 40]}
             position={{ x: item.x, y: item.y }}
             onStop={(e, data) => onDrag(item.id, data.x, data.y)}
         // onStop={(e, data) => onDrag(item.id, data.x, data.y)}

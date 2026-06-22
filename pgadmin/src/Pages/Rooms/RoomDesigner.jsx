@@ -43,14 +43,14 @@ const RoomDesigner = () => {
 
     const addBed = () => {
         if (beds.length >= 6) return;
-        const pos = getNextPosition([...beds, ...tables, ...cupboards], 70, 140);
+        const pos = getNextPosition([...beds, ...tables, ...cupboards], 80, 160);
         setBeds([
             ...beds,
             {
                 id: Date.now(),
                 label: `Bed-${beds.length + 1}`,
                 width: 80,
-                height: 120,
+                height: 160,
                 ...pos,
             },
         ]);
@@ -67,14 +67,14 @@ const RoomDesigner = () => {
             alert("Maximum 6 tables allowed");
             return;
         }
-        const pos = getNextPosition([...beds, ...tables, ...cupboards], 60, 50);
+        const pos = getNextPosition([...beds, ...tables, ...cupboards], 80, 80);
         setTables([
             ...tables,
             {
                 id: Date.now(),
                 label: `Table-${tables.length + 1}`,
-                width: 60,
-                height: 60,
+                width: 80,
+                height: 80,
                 ...pos,
             },
         ]);
@@ -94,14 +94,14 @@ const RoomDesigner = () => {
             alert("Maximum 6 cupboards allowed");
             return;
         }
-        const pos = getNextPosition([...beds, ...tables, ...cupboards], 70, 60);
+        const pos = getNextPosition([...beds, ...tables, ...cupboards], 120, 80);
         setCupboards([
             ...cupboards,
             {
                 id: Date.now(),
                 label: `Cupboard-${cupboards.length + 1}`,
-                width: 80,
-                height: 60,
+                width: 120,
+                height: 80,
                 ...pos,
             },
         ]);
@@ -153,79 +153,41 @@ const RoomDesigner = () => {
             setCupboards(cupboards.filter((item) => item.id !== selectedItem.id));
         }
 
-        if (
-            selectedItem.type === "door"
-        ) {
-            setDoors(
-                doors.filter(
-                    (item) =>
-                        item.id !== selectedItem.id
-                )
-            );
+        if (selectedItem.type === "door") {
+            setDoors(doors.filter((item) => item.id !== selectedItem.id));
         }
         setSelectedItem(null);
     };
 
     const rotateSelectedItem = () => {
-
         if (!selectedItem) {
             alert("Select item");
             return;
         }
 
-        const updateRotation = (
-            items,
-            setter
-        ) => {
+        const updateRotation = (items, setter) => {
             setter(
                 items.map((item) =>
                     item.id === selectedItem.id
                         ? {
-                            ...item,
-                            rotation:
-                                ((item.rotation || 0) +
-                                    90) %
-                                360,
-                        }
-                        : item
-                )
+                              ...item,
+                              rotation: ((item.rotation || 0) + 90) % 360,
+                          }
+                        : item,
+                ),
             );
         };
 
-        if (
-            selectedItem.type === "bed"
-        )
-            updateRotation(
-                beds,
-                setBeds
-            );
+        if (selectedItem.type === "bed") updateRotation(beds, setBeds);
 
-        if (
-            selectedItem.type === "table"
-        )
-            updateRotation(
-                tables,
-                setTables
-            );
+        if (selectedItem.type === "table") updateRotation(tables, setTables);
 
-        if (
-            selectedItem.type === "cupboard"
-        )
-            updateRotation(
-                cupboards,
-                setCupboards
-            );
+        if (selectedItem.type === "cupboard") updateRotation(cupboards, setCupboards);
 
-        if (
-            selectedItem.type === "door"
-        )
-            updateRotation(
-                doors,
-                setDoors
-            );
+        if (selectedItem.type === "door") updateRotation(doors, setDoors);
     };
     const updateBedPosition = (id, x, y) => {
-        if (isOverlapping(x, y, 70, 140, id)) {
+        if (isOverlapping(x, y, 80, 160, id)) {
             alert("Cannot overlap another item");
             return;
         }
@@ -234,7 +196,7 @@ const RoomDesigner = () => {
     };
 
     const updateTablePosition = (id, x, y) => {
-        if (isOverlapping(x, y, 60, 50, id)) {
+        if (isOverlapping(x, y, 80, 80, id)) {
             alert("Cannot overlap another item");
             return;
         }
@@ -242,7 +204,7 @@ const RoomDesigner = () => {
     };
 
     const updateCupboardPosition = (id, x, y) => {
-        if (isOverlapping(x, y, 70, 60, id)) {
+        if (isOverlapping(x, y, 120, 80, id)) {
             alert("Cannot overlap another item");
             return;
         }
@@ -250,15 +212,8 @@ const RoomDesigner = () => {
         setCupboards(cupboards.map((item) => (item.id === id ? { ...item, x, y } : item)));
     };
 
-    const updateDoorPosition = (
-        id, x, y) => {
-        setDoors(
-            doors.map((item) =>
-                item.id === id
-                    ? { ...item, x, y }
-                    : item
-            )
-        );
+    const updateDoorPosition = (id, x, y) => {
+        setDoors(doors.map((item) => (item.id === id ? { ...item, x, y } : item)));
     };
     const saveLayout = () => {
         const rooms = JSON.parse(localStorage.getItem("rooms")) || [];
@@ -266,9 +221,7 @@ const RoomDesigner = () => {
             if (String(room.id) === String(id)) {
                 return {
                     ...room,
-                    roomType: getRoomType(
-                        beds.length
-                    ),
+                    roomType: getRoomType(beds.length),
                     canvasWidth,
                     canvasHeight,
                     beds,
@@ -282,7 +235,6 @@ const RoomDesigner = () => {
         localStorage.setItem("rooms", JSON.stringify(updatedRooms));
 
         alert("Layout Updated Successfully");
-
     };
 
     // const ITEM_GAP = 20;
@@ -306,12 +258,11 @@ const RoomDesigner = () => {
         const items = [...beds, ...tables, ...cupboards];
         return items.some((item) => {
             if (item.id === currentId) return false;
-            const w = item.width || 60;
-            const h = item.height || 60;
+            const w = item.width || 80;
+            const h = item.height || 80;
             return x < item.x + w && x + width > item.x && y < item.y + h && y + height > item.y;
         });
     };
-
 
     return (
         <AdminLayout>

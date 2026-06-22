@@ -10,7 +10,7 @@ const TableItem = ({ item, onDrag, selected, onSelect }) => {
             nodeRef={nodeRef}
             bounds="parent"
             position={{ x: item.x, y: item.y }}
-            grid={[80, 80]}
+            grid={[40, 40]}
             onStop={(e, data) => onDrag(item.id, data.x, data.y)}
         >
             <div

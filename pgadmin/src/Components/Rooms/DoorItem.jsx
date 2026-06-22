@@ -13,7 +13,7 @@ const DoorItem = ({
         <Draggable
             nodeRef={nodeRef}
             bounds="parent"
-            grid={[80, 80]}
+            grid={[40, 40]}
             position={{
                 x: item.x,
                 y: item.y,
@@ -33,7 +33,7 @@ const DoorItem = ({
                     }`}
                 style={{
                     width: 80,
-                    height: 20,
+                    height: 40,
                     transform: `rotate(${item.rotation || 0}deg)`
                 }}
             >
