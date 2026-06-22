@@ -32,8 +32,8 @@ const DoorItem = ({
                         : "border border-black"
                     }`}
                 style={{
-                    width: 80,
-                    height: 40,
+                    width: item.width,
+                    height: item.height,
                     transform: `rotate(${item.rotation || 0}deg)`
                 }}
             >

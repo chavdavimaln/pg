@@ -19,6 +19,11 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
             name: "Profile",
             icon: <User size={20} />,
             path: "/profile"
+        },
+        {
+            name: "Student Allocation",
+            icon: <User size={20} />,
+            path: "/student-allocation",
         }
     ];
 
