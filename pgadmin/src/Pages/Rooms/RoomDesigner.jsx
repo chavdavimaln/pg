@@ -6,6 +6,8 @@ import AdminLayout from "../../Components/Layout/AdminLayout";
 import RoomCanvas from "../../Components/Rooms/RoomCanvas";
 import RoomToolbar from "../../Components/Rooms/RoomToolbar";
 import roomLayout from "../../Data/RoomLayout";
+import { GRID_SIZE } from "../../Utils/gridConfig";
+import { getRotatedSize } from "../../Utils/gridConfig";
 // import { calculateResponsiveLayout } from "../../Utils/roomLayoutEngine";
 
 const getRoomType = (beds) => {
@@ -159,32 +161,71 @@ const RoomDesigner = () => {
         setSelectedItem(null);
     };
 
+    // const rotateSelectedItem = () => {
+    //     if (!selectedItem) {
+    //         alert("Select item");
+    //         return;
+    //     }
+    //     const updateRotation = (items, setter) => {
+    //         setter(
+    //             items.map((item) =>
+    //                 item.id === selectedItem.id
+    //                     ? {
+    //                           ...item,
+    //                           rotation: ((item.rotation || 0) + 90) % 360,
+    //                       }
+    //                     : item,
+    //             ),
+    //         );
+    //     };
+    //     if (selectedItem.type === "bed") updateRotation(beds, setBeds);
+    //     if (selectedItem.type === "table") updateRotation(tables, setTables);
+    //     if (selectedItem.type === "cupboard") updateRotation(cupboards, setCupboards);
+    //     if (selectedItem.type === "door") updateRotation(doors, setDoors);
+    // };
     const rotateSelectedItem = () => {
-        if (!selectedItem) {
-            alert("Select item");
-            return;
-        }
+        if (!selectedItem) return;
 
-        const updateRotation = (items, setter) => {
+        const rotateCollection = (collection, setter) => {
             setter(
-                items.map((item) =>
-                    item.id === selectedItem.id
-                        ? {
-                              ...item,
-                              rotation: ((item.rotation || 0) + 90) % 360,
-                          }
-                        : item,
-                ),
+                collection.map((item) => {
+                    if (item.id !== selectedItem.id) return item;
+
+                    const rotation = ((item.rotation || 0) + 90) % 360;
+
+                    const size = getRotatedSize(item.width, item.height, rotation);
+
+                    let x = item.x;
+                    let y = item.y;
+
+                    const overlap = isOverlapping(x, y, size.width, size.height, item.id);
+
+                    if (overlap) {
+                        const pos = getNextPosition(
+                            [...beds, ...tables, ...cupboards, ...doors],
+                            size.width,
+                            size.height,
+                        );
+
+                        x = pos.x;
+                        y = pos.y;
+                    }
+
+                    return {
+                        ...item,
+                        width: size.width,
+                        height: size.height,
+                        rotation,
+                        x,
+                        y,
+                    };
+                }),
             );
         };
-
-        if (selectedItem.type === "bed") updateRotation(beds, setBeds);
-
-        if (selectedItem.type === "table") updateRotation(tables, setTables);
-
-        if (selectedItem.type === "cupboard") updateRotation(cupboards, setCupboards);
-
-        if (selectedItem.type === "door") updateRotation(doors, setDoors);
+        if (selectedItem.type === "bed") rotateCollection(beds, setBeds);
+        if (selectedItem.type === "table") rotateCollection(tables, setTables);
+        if (selectedItem.type === "cupboard") rotateCollection(cupboards, setCupboards);
+        if (selectedItem.type === "door") rotateCollection(doors, setDoors);
     };
     const updateBedPosition = (id, x, y) => {
         if (isOverlapping(x, y, 80, 160, id)) {
@@ -238,20 +279,45 @@ const RoomDesigner = () => {
     };
 
     // const ITEM_GAP = 20;
-    const GRID_SIZE = 40;
+    // const GRID_SIZE = 40;
 
+    // const getNextPosition = (existingItems, itemWidth, itemHeight) => {
+    //     const cols = Math.floor(canvasWidth / GRID_SIZE);
+    //     for (let row = 0; row < 100; row++) {
+    //         for (let col = 0; col < cols; col++) {
+    //             const x = col * GRID_SIZE;
+    //             const y = row * GRID_SIZE;
+    //             const occupied = existingItems.some((item) => item.x === x && item.y === y);
+    //             if (!occupied) {
+    //                 return { x, y };
+    //             }
+    //         }
+    //     }
+    //     return { x: 0, y: 0 };
+    // };
     const getNextPosition = (existingItems, itemWidth, itemHeight) => {
         const cols = Math.floor(canvasWidth / GRID_SIZE);
-        for (let row = 0; row < 100; row++) {
+
+        const rows = Math.floor(canvasHeight / GRID_SIZE);
+
+        for (let row = 0; row < rows; row++) {
             for (let col = 0; col < cols; col++) {
                 const x = col * GRID_SIZE;
                 const y = row * GRID_SIZE;
-                const occupied = existingItems.some((item) => item.x === x && item.y === y);
+
+                const occupied = existingItems.some((item) => {
+                    const w = item.width;
+                    const h = item.height;
+
+                    return x < item.x + w && x + itemWidth > item.x && y < item.y + h && y + itemHeight > item.y;
+                });
+
                 if (!occupied) {
                     return { x, y };
                 }
             }
         }
+
         return { x: 0, y: 0 };
     };
     const isOverlapping = (x, y, width, height, currentId) => {
