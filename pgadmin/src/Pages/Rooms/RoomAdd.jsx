@@ -32,9 +32,8 @@ const RoomAdd = () => {
     const [doors, setDoors] = useState([]);
     const [selectedItem, setSelectedItem] = useState(null);
     const generateLayout = () => {
-        const autoWidth = Number(roomData.bedCount) <= 2 ? 600 : Number(roomData.bedCount) <= 4 ? 900 : 1200;
-        const autoHeight = Number(roomData.bedCount) <= 2 ? 400 : Number(roomData.bedCount) <= 4 ? 600 : 800;
-        const result = calculateResponsiveLayout(Number(roomData.bedCount), autoWidth, autoHeight);
+        // The layout engine can grow beyond the entered size when the selected item count needs more room.
+        const result = calculateResponsiveLayout(Number(roomData.bedCount), roomData.canvasWidth, roomData.canvasHeight);
         setBeds(result.beds);
         setTables(result.tables);
         setCupboards(result.cupboards);
@@ -82,7 +81,7 @@ const RoomAdd = () => {
         setDoors([]);
     };
     const isOverlapping = (x, y, width, height, currentId) => {
-        const items = [...beds, ...tables, ...cupboards];
+        const items = [...beds, ...tables, ...cupboards, ...doors];
 
         return items.some((item) => {
             if (item.id === currentId) return false;
@@ -120,6 +119,13 @@ const RoomAdd = () => {
         setCupboards(cupboards.map((item) => (item.id === id ? { ...item, x, y } : item)));
     };
     const updateDoorPosition = (id, x, y) => {
+        const door = doors.find((item) => item.id === id);
+
+        if (isOverlapping(x, y, door.width, door.height, id)) {
+            alert("Items cannot overlap");
+            return;
+        }
+
         setDoors(doors.map((item) => (item.id === id ? { ...item, x, y } : item)));
     };
     return (
@@ -175,8 +181,26 @@ const RoomAdd = () => {
                                 className="border p-3 rounded-lg w-24"
                             />
                         </div>
-                        {/* <input type="number" min="400" value={roomData.canvasWidth} onChange={(e) => setRoomData({ ...roomData, canvasWidth: Number(e.target.value) })} placeholder="Canvas Width" className="border p-3 rounded-lg" />
-                        <input type="number" min="300" value={roomData.canvasHeight} onChange={(e) => setRoomData({ ...roomData, canvasHeight: Number(e.target.value) })} placeholder="Canvas Height" className="border p-3 rounded-lg" /> */}
+                        <input
+                            type="number"
+                            min="400"
+                            value={roomData.canvasWidth}
+                            onChange={(e) =>
+                                setRoomData({ ...roomData, canvasWidth: Math.max(400, Number(e.target.value)) })
+                            }
+                            placeholder="Canvas Width"
+                            className="border p-3 rounded-lg"
+                        />
+                        <input
+                            type="number"
+                            min="300"
+                            value={roomData.canvasHeight}
+                            onChange={(e) =>
+                                setRoomData({ ...roomData, canvasHeight: Math.max(300, Number(e.target.value)) })
+                            }
+                            placeholder="Canvas Height"
+                            className="border p-3 rounded-lg"
+                        />
                     </div>
                     <div className="mt-5 flex gap-3">
                         <button onClick={generateLayout} className="bg-blue-600 text-white px-5 py-3 rounded-lg">

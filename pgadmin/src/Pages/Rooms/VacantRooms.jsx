@@ -2,7 +2,9 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
+import { UserPlus } from "lucide-react";
 import AdminLayout from "../../Components/Layout/AdminLayout";
+import ResponsiveSortableTable from "../../Components/Common/ResponsiveSortableTable";
 import {
     getStoredAllocations,
     getStoredRooms,
@@ -31,54 +33,61 @@ const VacantRooms = () => {
         })
         .filter((item) => item.vacantBeds.length > 0);
 
+    const columns = [
+        { key: "roomNumber", header: "Room No", sortValue: ({ room }) => room.roomNumber, render: ({ room }) => room.roomNumber },
+        { key: "roomType", header: "Type", sortValue: ({ room }) => room.roomType, render: ({ room }) => room.roomType },
+        {
+            key: "beds",
+            header: "Vacant Beds",
+            sortValue: ({ vacantBeds }) => vacantBeds.map((bed) => bed.label).join(", "),
+            render: ({ vacantBeds }) => vacantBeds.map((bed) => bed.label).join(", "),
+        },
+        {
+            key: "tables",
+            header: "Vacant Tables",
+            sortValue: ({ vacantTables }) => vacantTables.map((table) => table.label).join(", ") || "-",
+            render: ({ vacantTables }) => vacantTables.map((table) => table.label).join(", ") || "-",
+        },
+        {
+            key: "cupboards",
+            header: "Vacant Cupboards",
+            sortValue: ({ vacantCupboards }) => vacantCupboards.map((cupboard) => cupboard.label).join(", ") || "-",
+            render: ({ vacantCupboards }) => vacantCupboards.map((cupboard) => cupboard.label).join(", ") || "-",
+        },
+        {
+            key: "allocate",
+            header: "Allocate",
+            sortable: false,
+            searchable: false,
+            render: ({ room, vacantBeds }) => (
+                <div className="flex flex-wrap gap-2">
+                    {vacantBeds.map((bed) => (
+                        <Link
+                            key={bed.id}
+                            to={`/student-allocation?roomId=${room.id}&bedId=${bed.id}`}
+                            className="flex h-9 w-9 items-center justify-center rounded bg-green-600 text-white"
+                            title={`Allocate ${bed.label}`}
+                            aria-label={`Allocate ${bed.label}`}
+                        >
+                            <UserPlus className="h-4 w-4" />
+                        </Link>
+                    ))}
+                </div>
+            ),
+        },
+    ];
+
     return (
         <AdminLayout>
             <div className="bg-white p-6 rounded-xl shadow">
                 <h1 className="text-2xl font-bold mb-5">Vacant Rooms</h1>
 
-                <div className="overflow-auto">
-                    <table className="w-full border">
-                        <thead>
-                            <tr className="bg-gray-100">
-                                <th className="border p-3">Room No</th>
-                                <th className="border p-3">Type</th>
-                                <th className="border p-3">Vacant Beds</th>
-                                <th className="border p-3">Vacant Tables</th>
-                                <th className="border p-3">Vacant Cupboards</th>
-                                <th className="border p-3">Allocate</th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                            {vacantRooms.map(({ room, vacantBeds, vacantTables, vacantCupboards }) => (
-                                <tr key={room.id}>
-                                    <td className="border p-3">{room.roomNumber}</td>
-                                    <td className="border p-3">{room.roomType}</td>
-                                    <td className="border p-3">{vacantBeds.map((bed) => bed.label).join(", ")}</td>
-                                    <td className="border p-3">
-                                        {vacantTables.map((table) => table.label).join(", ") || "-"}
-                                    </td>
-                                    <td className="border p-3">
-                                        {vacantCupboards.map((cupboard) => cupboard.label).join(", ") || "-"}
-                                    </td>
-                                    <td className="border p-3">
-                                        <div className="flex flex-wrap gap-2">
-                                            {vacantBeds.map((bed) => (
-                                                <Link
-                                                    key={bed.id}
-                                                    to={`/student-allocation?roomId=${room.id}&bedId=${bed.id}`}
-                                                    className="inline-block bg-green-600 text-white px-3 py-1 rounded"
-                                                >
-                                                    {bed.label}
-                                                </Link>
-                                            ))}
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                <ResponsiveSortableTable
+                    columns={columns}
+                    rows={vacantRooms}
+                    rowKey={({ room }) => room.id}
+                    searchPlaceholder="Search vacant rooms..."
+                />
             </div>
         </AdminLayout>
     );

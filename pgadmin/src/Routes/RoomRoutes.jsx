@@ -10,8 +10,7 @@ const RoomRoutes = () => {
         <Routes>
             <Route path="/rooms" element={<RoomList />} />
             <Route path="/rooms/designer/:id" element={<RoomDesigner />} />
-            <Route path="/student-allocation" element={<StudentAllocation />}
-            />
+            <Route path="/student-allocation" element={<StudentAllocation />} />
         </Routes>
     );
 };

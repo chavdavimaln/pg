@@ -52,7 +52,7 @@ const RoomCanvas = ({
     }, [canvasWidth]);
 
     return (
-        <div ref={wrapperRef} className="w-full overflow-hidden">
+        <div ref={wrapperRef} className="mx-auto w-full max-w-[1200px] overflow-hidden">
             <div className="flex justify-center">
                 <div style={{ width: canvasWidth * scale, height: canvasHeight * scale }}>
                 <div

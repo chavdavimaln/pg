@@ -2,7 +2,9 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
+import { Pencil } from "lucide-react";
 import AdminLayout from "../../Components/Layout/AdminLayout";
+import ResponsiveSortableTable from "../../Components/Common/ResponsiveSortableTable";
 import { getStoredAllocations, getStoredRooms } from "../../Utils/allocationHelper";
 
 const OccupiedRooms = () => {
@@ -17,50 +19,43 @@ const OccupiedRooms = () => {
             roomNumber: allocation.roomNumber || room?.roomNumber || "-",
         };
     });
+    const columns = [
+        { key: "roomNumber", header: "Room", accessor: "roomNumber" },
+        { key: "roomType", header: "Type", accessor: "roomType" },
+        { key: "bed", header: "Bed", sortValue: (item) => item.bedLabel || item.bedId },
+        { key: "table", header: "Table", sortValue: (item) => item.tableLabel || "-" },
+        { key: "cupboard", header: "Cupboard", sortValue: (item) => item.cupboardLabel || "-" },
+        { key: "studentName", header: "Student / Person", accessor: "studentName" },
+        { key: "phone", header: "Phone", sortValue: (item) => item.phone || "-" },
+        {
+            key: "action",
+            header: "Action",
+            sortable: false,
+            searchable: false,
+            render: (item) => (
+                <Link
+                    to={`/student-allocation?allocationId=${item.id}`}
+                    className="flex h-9 w-9 items-center justify-center rounded bg-indigo-600 text-white"
+                    title="Edit allocation"
+                    aria-label="Edit allocation"
+                >
+                    <Pencil className="h-4 w-4" />
+                </Link>
+            ),
+        },
+    ];
 
     return (
         <AdminLayout>
             <div className="bg-white p-6 rounded-xl shadow">
                 <h1 className="text-2xl font-bold mb-5">Occupied Rooms</h1>
 
-                <div className="overflow-auto">
-                    <table className="w-full border">
-                        <thead>
-                            <tr className="bg-gray-100">
-                                <th className="p-3 border">Room</th>
-                                <th className="p-3 border">Type</th>
-                                <th className="p-3 border">Bed</th>
-                                <th className="p-3 border">Table</th>
-                                <th className="p-3 border">Cupboard</th>
-                                <th className="p-3 border">Student / Person</th>
-                                <th className="p-3 border">Phone</th>
-                                <th className="p-3 border">Action</th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                            {occupiedRows.map((item) => (
-                                <tr key={item.id}>
-                                    <td className="border p-3">{item.roomNumber}</td>
-                                    <td className="border p-3">{item.roomType}</td>
-                                    <td className="border p-3">{item.bedLabel || item.bedId}</td>
-                                    <td className="border p-3">{item.tableLabel || "-"}</td>
-                                    <td className="border p-3">{item.cupboardLabel || "-"}</td>
-                                    <td className="border p-3">{item.studentName}</td>
-                                    <td className="border p-3">{item.phone || "-"}</td>
-                                    <td className="border p-3">
-                                        <Link
-                                            to={`/student-allocation?allocationId=${item.id}`}
-                                            className="inline-block bg-indigo-600 text-white px-3 py-1 rounded"
-                                        >
-                                            Change
-                                        </Link>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                <ResponsiveSortableTable
+                    columns={columns}
+                    rows={occupiedRows}
+                    rowKey={(item) => item.id}
+                    searchPlaceholder="Search occupied rooms..."
+                />
             </div>
         </AdminLayout>
     );

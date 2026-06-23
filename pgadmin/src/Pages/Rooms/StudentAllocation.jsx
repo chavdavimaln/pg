@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
 import AdminLayout from "../../Components/Layout/AdminLayout";
+import ResponsiveSortableTable from "../../Components/Common/ResponsiveSortableTable";
 import {
     getStoredAllocations,
     getStoredRooms,
@@ -212,6 +214,48 @@ const StudentAllocation = () => {
         if (editingId === id) resetForm();
     };
 
+    const allocationColumns = [
+        { key: "studentName", header: "Student", accessor: "studentName" },
+        { key: "roomNumber", header: "Room", accessor: "roomNumber" },
+        { key: "bed", header: "Bed", sortValue: (item) => item.bedLabel || item.bedId, render: (item) => item.bedLabel || item.bedId },
+        { key: "table", header: "Table", sortValue: (item) => item.tableLabel || "-", render: (item) => item.tableLabel || "-" },
+        {
+            key: "cupboard",
+            header: "Cupboard",
+            sortValue: (item) => item.cupboardLabel || "-",
+            render: (item) => item.cupboardLabel || "-",
+        },
+        { key: "allocatedDate", header: "Date", accessor: "allocatedDate" },
+        {
+            key: "action",
+            header: "Action",
+            sortable: false,
+            searchable: false,
+            render: (item) => (
+                <div className="flex gap-2">
+                    <button
+                        type="button"
+                        onClick={() => editAllocation(item)}
+                        className="flex h-9 w-9 items-center justify-center rounded bg-indigo-600 text-white"
+                        title="Edit allocation"
+                        aria-label="Edit allocation"
+                    >
+                        <Pencil className="h-4 w-4" />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => deleteAllocation(item.id)}
+                        className="flex h-9 w-9 items-center justify-center rounded bg-red-600 text-white"
+                        title="Delete allocation"
+                        aria-label="Delete allocation"
+                    >
+                        <Trash2 className="h-4 w-4" />
+                    </button>
+                </div>
+            ),
+        },
+    ];
+
     return (
         <AdminLayout>
             <div className="space-y-6">
@@ -220,8 +264,13 @@ const StudentAllocation = () => {
                 <div className="bg-white p-6 rounded-xl shadow">
                     <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                         <h2 className="text-xl font-bold">{editingId ? "Update Allocation" : "New Allocation"}</h2>
-                        <Link to="/students" className="self-start rounded-lg bg-indigo-600 px-4 py-2 text-white">
-                            Add New Profile
+                        <Link
+                            to="/students"
+                            className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-600 text-white"
+                            title="Add new profile"
+                            aria-label="Add new profile"
+                        >
+                            <Plus className="h-5 w-5" />
                         </Link>
                     </div>
                     <div className="grid md:grid-cols-2 gap-4">
@@ -337,12 +386,24 @@ const StudentAllocation = () => {
                     </div>
 
                     <div className="mt-5 flex gap-3">
-                        <button onClick={saveAllocation} className="px-6 py-3 bg-green-600 text-white rounded-lg">
-                            {editingId ? "Update Allocation" : "Allocate Student"}
+                        <button
+                            type="button"
+                            onClick={saveAllocation}
+                            className="flex h-11 w-11 items-center justify-center rounded-lg bg-green-600 text-white"
+                            title={editingId ? "Update allocation" : "Allocate student"}
+                            aria-label={editingId ? "Update allocation" : "Allocate student"}
+                        >
+                            <Check className="h-5 w-5" />
                         </button>
                         {editingId && (
-                            <button onClick={resetForm} className="px-6 py-3 bg-gray-600 text-white rounded-lg">
-                                Cancel Edit
+                            <button
+                                type="button"
+                                onClick={resetForm}
+                                className="flex h-11 w-11 items-center justify-center rounded-lg bg-gray-600 text-white"
+                                title="Cancel edit"
+                                aria-label="Cancel edit"
+                            >
+                                <X className="h-5 w-5" />
                             </button>
                         )}
                     </div>
@@ -350,49 +411,12 @@ const StudentAllocation = () => {
 
                 <div className="bg-white p-6 rounded-xl shadow">
                     <h2 className="text-xl font-bold mb-4">Allocation List</h2>
-                    <div className="overflow-auto">
-                        <table className="w-full border">
-                            <thead>
-                                <tr className="bg-gray-100">
-                                    <th className="border p-2">Student</th>
-                                    <th className="border p-2">Room</th>
-                                    <th className="border p-2">Bed</th>
-                                    <th className="border p-2">Table</th>
-                                    <th className="border p-2">Cupboard</th>
-                                    <th className="border p-2">Date</th>
-                                    <th className="border p-2">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {allocations.map((item) => (
-                                    <tr key={item.id}>
-                                        <td className="border p-2">{item.studentName}</td>
-                                        <td className="border p-2">{item.roomNumber}</td>
-                                        <td className="border p-2">{item.bedLabel || item.bedId}</td>
-                                        <td className="border p-2">{item.tableLabel || "-"}</td>
-                                        <td className="border p-2">{item.cupboardLabel || "-"}</td>
-                                        <td className="border p-2">{item.allocatedDate}</td>
-                                        <td className="border p-2">
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => editAllocation(item)}
-                                                    className="bg-indigo-600 text-white px-3 py-1 rounded"
-                                                >
-                                                    Edit
-                                                </button>
-                                                <button
-                                                    onClick={() => deleteAllocation(item.id)}
-                                                    className="bg-red-600 text-white px-3 py-1 rounded"
-                                                >
-                                                    Delete
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                    <ResponsiveSortableTable
+                        columns={allocationColumns}
+                        rows={allocations}
+                        rowKey={(item) => item.id}
+                        searchPlaceholder="Search allocations..."
+                    />
                 </div>
             </div>
         </AdminLayout>

@@ -2,11 +2,18 @@
 
 import React, { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
+import { Pencil, Save, UserPlus } from "lucide-react";
 import AdminLayout from "../../Components/Layout/AdminLayout";
+import ResponsiveSortableTable from "../../Components/Common/ResponsiveSortableTable";
 import RoomCanvas from "../../Components/Rooms/RoomCanvas";
 import RoomToolbar from "../../Components/Rooms/RoomToolbar";
 import { GRID_SIZE } from "../../Utils/gridConfig";
 import { getRotatedSize } from "../../Utils/gridConfig";
+import {
+    CANVAS_PADDING,
+    DEFAULT_SIZES,
+    normalizeRoomItems,
+} from "../../Utils/roomLayoutEngine";
 import {
     getAllocationForItem,
     getStoredAllocations,
@@ -46,10 +53,10 @@ const RoomDesigner = () => {
         const rooms = getStoredRooms();
         const room = rooms.find((item) => String(item.id) === String(id));
         if (!room) return;
-        setBeds(room.beds || []);
-        setTables(room.tables || []);
-        setCupboards(room.cupboards || []);
-        setDoors(room.doors || []);
+        setBeds(normalizeRoomItems(room.beds || [], "bed"));
+        setTables(normalizeRoomItems(room.tables || [], "table"));
+        setCupboards(normalizeRoomItems(room.cupboards || [], "cupboard"));
+        setDoors(normalizeRoomItems(room.doors || [], "door"));
         setCanvasWidth(room.canvasWidth || 600);
         setCanvasHeight(room.canvasHeight || 400);
         setAllocations(getStoredAllocations());
@@ -58,14 +65,13 @@ const RoomDesigner = () => {
 
     const addBed = () => {
         if (beds.length >= 6) return;
-        const pos = getNextPosition([...beds, ...tables, ...cupboards], 80, 160);
+        const pos = getNextPosition([...beds, ...tables, ...cupboards, ...doors], DEFAULT_SIZES.bed.width, DEFAULT_SIZES.bed.height);
         setBeds([
             ...beds,
             {
                 id: Date.now(),
                 label: `Bed-${beds.length + 1}`,
-                width: 80,
-                height: 160,
+                ...DEFAULT_SIZES.bed,
                 ...pos,
             },
         ]);
@@ -87,14 +93,13 @@ const RoomDesigner = () => {
             alert("Maximum 6 tables allowed");
             return;
         }
-        const pos = getNextPosition([...beds, ...tables, ...cupboards], 80, 80);
+        const pos = getNextPosition([...beds, ...tables, ...cupboards, ...doors], DEFAULT_SIZES.table.width, DEFAULT_SIZES.table.height);
         setTables([
             ...tables,
             {
                 id: Date.now(),
                 label: `Table-${tables.length + 1}`,
-                width: 80,
-                height: 80,
+                ...DEFAULT_SIZES.table,
                 ...pos,
             },
         ]);
@@ -119,14 +124,13 @@ const RoomDesigner = () => {
             alert("Maximum 6 cupboards allowed");
             return;
         }
-        const pos = getNextPosition([...beds, ...tables, ...cupboards], 120, 80);
+        const pos = getNextPosition([...beds, ...tables, ...cupboards, ...doors], DEFAULT_SIZES.cupboard.width, DEFAULT_SIZES.cupboard.height);
         setCupboards([
             ...cupboards,
             {
                 id: Date.now(),
                 label: `Cupboard-${cupboards.length + 1}`,
-                width: 120,
-                height: 80,
+                ...DEFAULT_SIZES.cupboard,
                 ...pos,
             },
         ]);
@@ -136,14 +140,13 @@ const RoomDesigner = () => {
             alert("Only one door allowed");
             return;
         }
+        const pos = getNextPosition([...beds, ...tables, ...cupboards], DEFAULT_SIZES.door.width, DEFAULT_SIZES.door.height);
         setDoors([
             {
                 id: Date.now(),
                 label: "Door",
-                x: 0,
-                y: canvasHeight - 40,
-                width: 80,
-                height: 20,
+                ...pos,
+                ...DEFAULT_SIZES.door,
                 rotation: 0,
             },
         ]);
@@ -361,29 +364,41 @@ const RoomDesigner = () => {
     //     return { x: 0, y: 0 };
     // };
     const getNextPosition = (existingItems, itemWidth, itemHeight) => {
-        const cols = Math.floor(canvasWidth / GRID_SIZE);
+        let width = canvasWidth;
+        let height = canvasHeight;
 
-        const rows = Math.floor(canvasHeight / GRID_SIZE);
+        // Search grid cells with room padding first; if full, grow the canvas and search again.
+        for (let attempt = 0; attempt < 12; attempt++) {
+            const maxX = width - CANVAS_PADDING - itemWidth;
+            const maxY = height - CANVAS_PADDING - itemHeight;
 
-        for (let row = 0; row < rows; row++) {
-            for (let col = 0; col < cols; col++) {
-                const x = col * GRID_SIZE;
-                const y = row * GRID_SIZE;
+            for (let y = CANVAS_PADDING; y <= maxY; y += GRID_SIZE) {
+                for (let x = CANVAS_PADDING; x <= maxX; x += GRID_SIZE) {
+                    const occupied = existingItems.some((item) => {
+                        const w = item.width || GRID_SIZE;
+                        const h = item.height || GRID_SIZE;
 
-                const occupied = existingItems.some((item) => {
-                    const w = item.width;
-                    const h = item.height;
+                        return x < item.x + w && x + itemWidth > item.x && y < item.y + h && y + itemHeight > item.y;
+                    });
 
-                    return x < item.x + w && x + itemWidth > item.x && y < item.y + h && y + itemHeight > item.y;
-                });
-
-                if (!occupied) {
-                    return { x, y };
+                    if (!occupied) {
+                        if (width !== canvasWidth) setCanvasWidth(width);
+                        if (height !== canvasHeight) setCanvasHeight(height);
+                        return { x, y };
+                    }
                 }
+            }
+
+            if (width <= height * 1.6) {
+                width += GRID_SIZE * 2;
+            } else {
+                height += GRID_SIZE * 2;
             }
         }
 
-        return { x: 0, y: 0 };
+        setCanvasWidth(width);
+        setCanvasHeight(height);
+        return { x: CANVAS_PADDING, y: CANVAS_PADDING };
     };
     const isOutOfBounds = (x, y, width, height) =>
         x < 0 || y < 0 || x + width > canvasWidth || y + height > canvasHeight;
@@ -497,13 +512,66 @@ const RoomDesigner = () => {
         return `/student-allocation?${params.toString()}`;
     };
 
+    const allocationColumns = [
+            { key: "label", header: "Item", accessor: "label" },
+            { key: "type", header: "Type", accessor: "type" },
+            { key: "status", header: "Status", accessor: "status" },
+            { key: "student", header: "Student / Person", accessor: "student" },
+            {
+                key: "action",
+                header: "Action",
+                sortable: false,
+                searchable: false,
+                render: (item) =>
+                    item.allocation ? (
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                            <select
+                                value={item.allocation.studentId || ""}
+                                onChange={(e) => changeAllocationProfile(item.allocation.id, e.target.value)}
+                                className="min-w-40 rounded border p-2"
+                            >
+                                <option value="">Select Profile</option>
+                                {students.map((student) => (
+                                    <option key={student.id} value={student.id}>
+                                        {student.name}
+                                    </option>
+                                ))}
+                            </select>
+                            <Link
+                                to={`/student-allocation?allocationId=${item.allocation.id}`}
+                                className="flex h-9 w-9 items-center justify-center rounded bg-indigo-600 text-white"
+                                title="Edit allocation"
+                                aria-label="Edit allocation"
+                            >
+                                <Pencil className="h-4 w-4" />
+                            </Link>
+                        </div>
+                    ) : (
+                        <Link
+                            to={getAllocateLink(item)}
+                            className="flex h-9 w-9 items-center justify-center rounded bg-green-600 text-white"
+                            title="Allocate item"
+                            aria-label="Allocate item"
+                        >
+                            <UserPlus className="h-4 w-4" />
+                        </Link>
+                    ),
+            },
+    ];
+
     return (
         <AdminLayout>
             <div className="space-y-5">
                 <div className="flex items-center justify-between">
                     <h1 className="text-3xl font-bold">Room Designer - Room {roomData?.roomNumber}</h1>
-                    <button onClick={saveLayout} className="bg-indigo-600 text-white px-5 py-3 rounded-lg">
-                        Save Layout
+                    <button
+                        type="button"
+                        onClick={saveLayout}
+                        className="flex h-11 w-11 items-center justify-center rounded-lg bg-indigo-600 text-white"
+                        title="Save layout"
+                        aria-label="Save layout"
+                    >
+                        <Save className="h-5 w-5" />
                     </button>
                 </div>
                 <div className="bg-white rounded-xl shadow p-5">
@@ -579,62 +647,14 @@ const RoomDesigner = () => {
                 />
                 <div className="bg-white rounded-xl shadow p-5">
                     <h2 className="text-xl font-bold mb-4">Room Allocation Status</h2>
-                    <div className="overflow-auto">
-                        <table className="w-full border">
-                            <thead>
-                                <tr className="bg-gray-100">
-                                    <th className="border p-2">Item</th>
-                                    <th className="border p-2">Type</th>
-                                    <th className="border p-2">Status</th>
-                                    <th className="border p-2">Student / Person</th>
-                                    <th className="border p-2">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {roomItems.map((item) => (
-                                    <tr key={`${item.type}-${item.id}`}>
-                                        <td className="border p-2">{item.label}</td>
-                                        <td className="border p-2 capitalize">{item.type}</td>
-                                        <td className="border p-2">{item.status}</td>
-                                        <td className="border p-2">{item.student}</td>
-                                        <td className="border p-2">
-                                            {item.allocation ? (
-                                                <div className="flex flex-col gap-2 md:flex-row">
-                                                    <select
-                                                        value={item.allocation.studentId || ""}
-                                                        onChange={(e) =>
-                                                            changeAllocationProfile(item.allocation.id, e.target.value)
-                                                        }
-                                                        className="border rounded p-2"
-                                                    >
-                                                        <option value="">Select Profile</option>
-                                                        {students.map((student) => (
-                                                            <option key={student.id} value={student.id}>
-                                                                {student.name}
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                    <Link
-                                                        to={`/student-allocation?allocationId=${item.allocation.id}`}
-                                                        className="bg-indigo-600 text-white px-3 py-2 rounded text-center"
-                                                    >
-                                                        Edit
-                                                    </Link>
-                                                </div>
-                                            ) : (
-                                                <Link
-                                                    to={getAllocateLink(item)}
-                                                    className="inline-block bg-green-600 text-white px-3 py-2 rounded"
-                                                >
-                                                    Allocate
-                                                </Link>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                    <ResponsiveSortableTable
+                        columns={allocationColumns}
+                        rows={roomItems}
+                        rowKey={(item) => `${item.type}-${item.id}`}
+                        searchPlaceholder="Search allocation status..."
+                        pageSize={5}
+                        maxHeight="20rem"
+                    />
                 </div>
             </div>
         </AdminLayout>

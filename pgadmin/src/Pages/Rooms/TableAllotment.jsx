@@ -2,11 +2,22 @@
 
 import React from "react";
 import AdminLayout from "../../Components/Layout/AdminLayout";
+import ResponsiveSortableTable from "../../Components/Common/ResponsiveSortableTable";
 import { getStoredAllocations } from "../../Utils/allocationHelper";
 
 const TableAllotment = () => {
 
     const allocations = getStoredAllocations().filter(item => item.tableId);
+    const columns = [
+        { key: "studentName", header: "Student", accessor: "studentName" },
+        { key: "roomNumber", header: "Room", accessor: "roomNumber" },
+        {
+            key: "table",
+            header: "Table",
+            sortValue: (item) => item.tableLabel || item.tableId,
+            render: (item) => item.tableLabel || item.tableId,
+        },
+    ];
 
     return (
         <AdminLayout>
@@ -16,43 +27,12 @@ const TableAllotment = () => {
                     Table Allotment
                 </h1>
 
-                <table className="w-full border">
-
-                    <thead>
-                        <tr>
-                            <th className="border p-3">
-                                Student
-                            </th>
-
-                            <th className="border p-3">
-                                Room
-                            </th>
-
-                            <th className="border p-3">
-                                Table
-                            </th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        {allocations.map(item => (
-                            <tr key={item.id}>
-                                <td className="border p-3">
-                                    {item.studentName}
-                                </td>
-
-                                <td className="border p-3">
-                                    {item.roomNumber}
-                                </td>
-
-                                <td className="border p-3">
-                                    {item.tableLabel || item.tableId}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-
-                </table>
+                <ResponsiveSortableTable
+                    columns={columns}
+                    rows={allocations}
+                    rowKey={(item) => item.id}
+                    searchPlaceholder="Search table allotments..."
+                />
 
             </div>
         </AdminLayout>

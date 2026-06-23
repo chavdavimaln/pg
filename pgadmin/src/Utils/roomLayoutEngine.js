@@ -1,116 +1,100 @@
 // pgadmin/src/Utils/roomLayoutEngine.js
 
+import { GRID_SIZE } from "./gridConfig";
+
+export const ITEM_SHRINK = 5;
+export const CANVAS_PADDING = GRID_SIZE;
+
 export const DEFAULT_SIZES = {
     bed: {
-        width: 80,
-        height: 160,
+        width: GRID_SIZE - ITEM_SHRINK,
+        height: GRID_SIZE * 2 - ITEM_SHRINK,
     },
     table: {
-        width: 80,
-        height: 80,
+        width: GRID_SIZE - ITEM_SHRINK,
+        height: GRID_SIZE - ITEM_SHRINK,
     },
     cupboard: {
-        width: 120,
-        height: 80,
+        width: 120 - ITEM_SHRINK,
+        height: GRID_SIZE - ITEM_SHRINK,
+    },
+    door: {
+        width: GRID_SIZE - ITEM_SHRINK,
+        height: GRID_SIZE - ITEM_SHRINK,
     },
 };
 
-const GAP = 15;
+const getRoomGrid = (bedCount) => {
+    if (bedCount <= 2) return { cols: 1, rows: bedCount };
+    if (bedCount <= 4) return { cols: 2, rows: Math.ceil(bedCount / 2) };
+    return { cols: 3, rows: Math.ceil(bedCount / 3) };
+};
+
+export const normalizeRoomItems = (items = [], type) =>
+    items.map((item) => ({
+        ...item,
+        width: DEFAULT_SIZES[type]?.width || item.width,
+        height: DEFAULT_SIZES[type]?.height || item.height,
+    }));
 
 export const calculateResponsiveLayout = (bedCount, canvasWidth, canvasHeight) => {
-    const minWidth = 400;
-    const minHeight = 300;
+    const count = Math.min(6, Math.max(1, Number(bedCount)));
+    const { cols, rows } = getRoomGrid(count);
+    const bayWidth = GRID_SIZE * 4;
+    const bayHeight = GRID_SIZE * 3;
 
-    let width = Math.max(minWidth, Number(canvasWidth));
-    let height = Math.max(minHeight, Number(canvasHeight));
-    let cols = width >= 1200 ? 3 : width >= 800 ? 2 : 1;
-    let rows = Math.ceil(bedCount / cols);
-    const sectionWidth = (width - (cols + 1) * GAP) / cols;
-    const scale = Math.min(1, sectionWidth / 220);
-    const bedHeight = DEFAULT_SIZES.bed.height * scale;
-    const requiredHeight = rows * (bedHeight + 60) + GAP * (rows + 1);
-
-    if (requiredHeight > height) {
-        height = requiredHeight + 30;
-    }
+    // The generated canvas grows from the item grid, so all 19 possible room items fit with breathing room.
+    const width = Math.max(Number(canvasWidth) || 0, CANVAS_PADDING * 2 + cols * bayWidth);
+    const height = Math.max(Number(canvasHeight) || 0, CANVAS_PADDING * 2 + rows * bayHeight + GRID_SIZE);
 
     const beds = [];
     const tables = [];
     const cupboards = [];
-    const doors = [];
-    for (let i = 0; i < bedCount; i++) {
+
+    for (let i = 0; i < count; i++) {
         const col = i % cols;
         const row = Math.floor(i / cols);
-        const startX = GAP + col * (sectionWidth + GAP);
-        const startY = GAP + row * (bedHeight + 60);
-
-        // beds.push({
-        //     id: `bed-${i + 1}`,
-        //     label: `Bed-${i + 1}`,
-        //     x: startX,
-        //     y: startY,
-        //     width: bedWidth,
-        //     height: bedHeight,
-        // });
-
-        // tables.push({
-        //     id: `table-${i + 1}`,
-        //     label: `Table-${i + 1}`,
-        //     x: startX + bedWidth + 10,
-        //     y: startY,
-        //     width: tableWidth,
-        //     height: tableHeight,
-        // });
-
-        // cupboards.push({
-        //     id: `cupboard-${i + 1}`,
-        //     label: `Cupboard-${i + 1}`,
-        //     x: startX + bedWidth + tableWidth + 20,
-        //     y: startY,
-        //     width: cupboardWidth,
-        //     height: cupboardHeight,
-        // });
+        const startX = CANVAS_PADDING + col * bayWidth;
+        const startY = CANVAS_PADDING + row * bayHeight;
 
         beds.push({
             id: `bed-${i + 1}`,
             label: `Bed-${i + 1}`,
-            x: Math.round(startX / 80) * 80,
-            y: Math.round(startY / 80) * 80,
-            width: 80,
-            height: 160,
+            x: startX,
+            y: startY,
+            ...DEFAULT_SIZES.bed,
             rotation: 0,
         });
 
         tables.push({
             id: `table-${i + 1}`,
             label: `Table-${i + 1}`,
-            x: Math.round((startX + 90) / 80) * 80,
-            y: Math.round(startY / 80) * 80,
-            width: 80,
-            height: 80,
+            x: startX + GRID_SIZE,
+            y: startY,
+            ...DEFAULT_SIZES.table,
             rotation: 0,
         });
 
         cupboards.push({
             id: `cupboard-${i + 1}`,
             label: `Cupboard-${i + 1}`,
-            x: Math.round((startX + 180) / 80) * 80,
-            y: Math.round(startY / 80) * 80,
-            width: 120,
-            height: 80,
-            rotation: 0,
-        });
-
-        doors.push({
-            id: `door-${i + 1}`,
-            label: `Door-${i + 1}`,
-            x: Math.round((startX + 320) / 80) * 80,
-            y: Math.round(startY / 80) * 80,
-            width: 40,
-            height: 40,
+            x: startX + GRID_SIZE,
+            y: startY + GRID_SIZE,
+            ...DEFAULT_SIZES.cupboard,
             rotation: 0,
         });
     }
+
+    const doors = [
+        {
+            id: "door-1",
+            label: "Door",
+            x: width - CANVAS_PADDING - DEFAULT_SIZES.door.width,
+            y: height - CANVAS_PADDING - DEFAULT_SIZES.door.height,
+            ...DEFAULT_SIZES.door,
+            rotation: 0,
+        },
+    ];
 
     return {
         beds,

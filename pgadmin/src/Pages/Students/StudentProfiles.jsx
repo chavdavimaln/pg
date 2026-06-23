@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
+import { Check, Pencil, Trash2, X } from "lucide-react";
 import AdminLayout from "../../Components/Layout/AdminLayout";
+import ResponsiveSortableTable from "../../Components/Common/ResponsiveSortableTable";
 import {
     getStoredAllocations,
     getStoredStudents,
@@ -96,6 +98,52 @@ const StudentProfiles = () => {
         if (editingId === id) resetForm();
     };
 
+    const profileColumns = [
+        { key: "name", header: "Name", accessor: "name" },
+        { key: "phone", header: "Phone", sortValue: (student) => student.phone || "-", render: (student) => student.phone || "-" },
+        { key: "email", header: "Email", sortValue: (student) => student.email || "-", render: (student) => student.email || "-" },
+        {
+            key: "guardianName",
+            header: "Guardian",
+            sortValue: (student) => student.guardianName || "-",
+            render: (student) => student.guardianName || "-",
+        },
+        {
+            key: "idProof",
+            header: "ID Proof",
+            sortValue: (student) => student.idProof || "-",
+            render: (student) => student.idProof || "-",
+        },
+        {
+            key: "action",
+            header: "Action",
+            sortable: false,
+            searchable: false,
+            render: (student) => (
+                <div className="flex gap-2">
+                    <button
+                        type="button"
+                        onClick={() => editStudent(student)}
+                        className="flex h-9 w-9 items-center justify-center rounded bg-indigo-600 text-white"
+                        title="Edit profile"
+                        aria-label="Edit profile"
+                    >
+                        <Pencil className="h-4 w-4" />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => deleteStudent(student.id)}
+                        className="flex h-9 w-9 items-center justify-center rounded bg-red-600 text-white"
+                        title="Delete profile"
+                        aria-label="Delete profile"
+                    >
+                        <Trash2 className="h-4 w-4" />
+                    </button>
+                </div>
+            ),
+        },
+    ];
+
     return (
         <AdminLayout>
             <div className="space-y-6">
@@ -159,12 +207,24 @@ const StudentProfiles = () => {
                     </div>
 
                     <div className="mt-5 flex gap-3">
-                        <button onClick={saveStudent} className="px-6 py-3 bg-green-600 text-white rounded-lg">
-                            {editingId ? "Update Profile" : "Add Profile"}
+                        <button
+                            type="button"
+                            onClick={saveStudent}
+                            className="flex h-11 w-11 items-center justify-center rounded-lg bg-green-600 text-white"
+                            title={editingId ? "Update profile" : "Add profile"}
+                            aria-label={editingId ? "Update profile" : "Add profile"}
+                        >
+                            <Check className="h-5 w-5" />
                         </button>
                         {editingId && (
-                            <button onClick={resetForm} className="px-6 py-3 bg-gray-600 text-white rounded-lg">
-                                Cancel Edit
+                            <button
+                                type="button"
+                                onClick={resetForm}
+                                className="flex h-11 w-11 items-center justify-center rounded-lg bg-gray-600 text-white"
+                                title="Cancel edit"
+                                aria-label="Cancel edit"
+                            >
+                                <X className="h-5 w-5" />
                             </button>
                         )}
                     </div>
@@ -172,47 +232,12 @@ const StudentProfiles = () => {
 
                 <div className="bg-white p-6 rounded-xl shadow">
                     <h2 className="text-xl font-bold mb-4">Profile List</h2>
-                    <div className="overflow-auto">
-                        <table className="w-full border">
-                            <thead>
-                                <tr className="bg-gray-100">
-                                    <th className="border p-2">Name</th>
-                                    <th className="border p-2">Phone</th>
-                                    <th className="border p-2">Email</th>
-                                    <th className="border p-2">Guardian</th>
-                                    <th className="border p-2">ID Proof</th>
-                                    <th className="border p-2">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {students.map((student) => (
-                                    <tr key={student.id}>
-                                        <td className="border p-2">{student.name}</td>
-                                        <td className="border p-2">{student.phone || "-"}</td>
-                                        <td className="border p-2">{student.email || "-"}</td>
-                                        <td className="border p-2">{student.guardianName || "-"}</td>
-                                        <td className="border p-2">{student.idProof || "-"}</td>
-                                        <td className="border p-2">
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => editStudent(student)}
-                                                    className="bg-indigo-600 text-white px-3 py-1 rounded"
-                                                >
-                                                    Edit
-                                                </button>
-                                                <button
-                                                    onClick={() => deleteStudent(student.id)}
-                                                    className="bg-red-600 text-white px-3 py-1 rounded"
-                                                >
-                                                    Delete
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                    <ResponsiveSortableTable
+                        columns={profileColumns}
+                        rows={students}
+                        rowKey={(student) => student.id}
+                        searchPlaceholder="Search profiles..."
+                    />
                 </div>
             </div>
         </AdminLayout>

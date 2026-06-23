@@ -2,11 +2,17 @@
 
 import React from "react";
 import AdminLayout from "../../Components/Layout/AdminLayout";
+import ResponsiveSortableTable from "../../Components/Common/ResponsiveSortableTable";
 import { getStoredAllocations } from "../../Utils/allocationHelper";
 
 const OccupiedBeds = () => {
 
     const allocations = getStoredAllocations();
+    const columns = [
+        { key: "studentName", header: "Student", accessor: "studentName" },
+        { key: "roomNumber", header: "Room", accessor: "roomNumber" },
+        { key: "bed", header: "Bed", sortValue: (item) => item.bedLabel || item.bedId, render: (item) => item.bedLabel || item.bedId },
+    ];
 
     return (
         <AdminLayout>
@@ -15,43 +21,12 @@ const OccupiedBeds = () => {
                 <h1 className="text-2xl font-bold mb-5">
                     Occupied Beds
                 </h1>
-
-                <table className="w-full border">
-                    <thead>
-                        <tr>
-                            <th className="border p-3">
-                                Student
-                            </th>
-
-                            <th className="border p-3">
-                                Room
-                            </th>
-
-                            <th className="border p-3">
-                                Bed
-                            </th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        {allocations.map(item => (
-                            <tr key={item.id}>
-                                <td className="border p-3">
-                                    {item.studentName}
-                                </td>
-
-                                <td className="border p-3">
-                                    {item.roomNumber}
-                                </td>
-
-                                <td className="border p-3">
-                                    {item.bedLabel || item.bedId}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-
+                <ResponsiveSortableTable
+                    columns={columns}
+                    rows={allocations}
+                    rowKey={(item) => item.id}
+                    searchPlaceholder="Search occupied beds..."
+                />
             </div>
         </AdminLayout>
     );
