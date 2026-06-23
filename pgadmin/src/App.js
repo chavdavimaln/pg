@@ -20,6 +20,7 @@ import TableAllotment from "./Pages/Rooms/TableAllotment";
 import CupboardAllotment from "./Pages/Rooms/CupboardAllotment";
 
 import StudentAllocation from "./Pages/Rooms/StudentAllocation";
+import StudentProfiles from "./Pages/Students/StudentProfiles";
 
 import './App.css';
 
@@ -42,6 +43,7 @@ function App() {
                 <Route path="/tables/allotment" element={<TableAllotment />} />
                 <Route path="/cupboards/allotment" element={<CupboardAllotment />} />
                 <Route path="/student-allocation" element={<StudentAllocation />} />
+                <Route path="/students" element={<StudentProfiles />} />
             </Routes>
         </div>
     );

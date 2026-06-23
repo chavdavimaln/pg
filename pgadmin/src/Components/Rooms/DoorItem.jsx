@@ -6,6 +6,7 @@ const DoorItem = ({
     onDrag,
     selected,
     onSelect,
+    scale = 1,
 }) => {
     const nodeRef = useRef(null);
 
@@ -14,13 +15,16 @@ const DoorItem = ({
             nodeRef={nodeRef}
             bounds="parent"
             grid={[40, 40]}
+            scale={scale}
             position={{
                 x: item.x,
                 y: item.y,
             }}
-            onStop={(e, data) =>
-                onDrag(item.id, data.x, data.y)
-            }
+            onStop={(e, data) => {
+                if (data.x !== item.x || data.y !== item.y) {
+                    onDrag(item.id, data.x, data.y);
+                }
+            }}
         >
             <div
                 ref={nodeRef}

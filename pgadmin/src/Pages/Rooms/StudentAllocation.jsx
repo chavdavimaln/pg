@@ -1,38 +1,76 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import AdminLayout from "../../Components/Layout/AdminLayout";
+import {
+    getStoredAllocations,
+    getStoredRooms,
+    getStoredStudents,
+    isOccupied,
+    saveStoredAllocations,
+} from "../../Utils/allocationHelper";
+
+const emptyForm = {
+    studentId: "",
+    studentName: "",
+    phone: "",
+    email: "",
+    roomId: "",
+    bedId: "",
+    tableId: "",
+    cupboardId: "",
+};
 
 const StudentAllocation = () => {
+    const [searchParams, setSearchParams] = useSearchParams();
     const [rooms, setRooms] = useState([]);
     const [allocations, setAllocations] = useState([]);
+    const [students, setStudents] = useState([]);
+    const [formData, setFormData] = useState(emptyForm);
+    const [editingId, setEditingId] = useState(null);
 
-    const [formData, setFormData] = useState({
-        studentName: "",
-        roomId: "",
-        bedId: "",
-        tableId: "",
-        cupboardId: "",
-    });
-
-    const [selectedRoom, setSelectedRoom] = useState(null);
+    const selectedRoom = useMemo(
+        () => rooms.find((room) => String(room.id) === String(formData.roomId)) || null,
+        [rooms, formData.roomId],
+    );
 
     useEffect(() => {
-        const savedRooms =
-            JSON.parse(localStorage.getItem("rooms")) || [];
-
-        const savedAllocations =
-            JSON.parse(localStorage.getItem("allocations")) || [];
+        const savedRooms = getStoredRooms();
+        const savedAllocations = getStoredAllocations();
+        const savedStudents = getStoredStudents();
+        const allocationId = searchParams.get("allocationId");
 
         setRooms(savedRooms);
         setAllocations(savedAllocations);
-    }, []);
+        setStudents(savedStudents);
+
+        if (allocationId) {
+            const allocation = savedAllocations.find((item) => String(item.id) === String(allocationId));
+            if (allocation) {
+                setEditingId(allocation.id);
+                setFormData({
+                    studentId: allocation.studentId || "",
+                    studentName: allocation.studentName || "",
+                    phone: allocation.phone || "",
+                    email: allocation.email || "",
+                    roomId: allocation.roomId || "",
+                    bedId: allocation.bedId || "",
+                    tableId: allocation.tableId || "",
+                    cupboardId: allocation.cupboardId || "",
+                });
+                return;
+            }
+        }
+
+        setFormData({
+            ...emptyForm,
+            roomId: searchParams.get("roomId") || "",
+            bedId: searchParams.get("bedId") || "",
+            tableId: searchParams.get("tableId") || "",
+            cupboardId: searchParams.get("cupboardId") || "",
+        });
+    }, [searchParams]);
 
     const handleRoomChange = (roomId) => {
-        const room = rooms.find(
-            (item) => String(item.id) === String(roomId)
-        );
-
-        setSelectedRoom(room);
-
         setFormData({
             ...formData,
             roomId,
@@ -42,269 +80,202 @@ const StudentAllocation = () => {
         });
     };
 
-    // const saveAllocation = () => {
-    //     if (
-    //         !formData.studentName ||
-    //         !formData.roomId ||
-    //         !formData.bedId
-    //     ) {
-    //         alert("Please fill all required fields");
-    //         return;
-    //     }
+    const handleStudentChange = (studentId) => {
+        const student = students.find((item) => String(item.id) === String(studentId));
 
-    //     const alreadyAllocated =
-    //         allocations.find(
-    //             (item) =>
-    //                 String(item.roomId) ===
-    //                 String(formData.roomId) &&
-    //                 String(item.bedId) ===
-    //                 String(formData.bedId)
-    //         );
+        setFormData({
+            ...formData,
+            studentId,
+            studentName: student?.name || "",
+            phone: student?.phone || "",
+            email: student?.email || "",
+        });
+    };
 
-    //     if (alreadyAllocated) {
-    //         alert("This bed is already occupied");
-    //         return;
-    //     }
+    const isCurrentAllocationItem = (type, itemId) => {
+        if (!editingId) return false;
 
-    //     const room =
-    //         rooms.find(
-    //             (item) =>
-    //                 String(item.id) ===
-    //                 String(formData.roomId)
-    //         ) || {};
+        const allocation = allocations.find((item) => item.id === editingId);
+        if (!allocation) return false;
+        if (!selectedRoom || String(allocation.roomId) !== String(selectedRoom.id)) return false;
 
-    //     const allocation = {
-    //         id: Date.now(),
+        if (type === "bed") return String(allocation.bedId) === String(itemId);
+        if (type === "table") return String(allocation.tableId) === String(itemId);
+        if (type === "cupboard") return String(allocation.cupboardId) === String(itemId);
 
-    //         studentName:
-    //             formData.studentName,
+        return false;
+    };
 
-    //         roomId:
-    //             formData.roomId,
+    const isItemUnavailable = (type, itemId) =>
+        selectedRoom && isOccupied(type, itemId, selectedRoom.id) && !isCurrentAllocationItem(type, itemId);
 
-    //         roomNumber:
-    //             room.roomNumber,
-
-    //         roomType:
-    //             room.roomType,
-
-    //         bedId:
-    //             formData.bedId,
-
-    //         tableId:
-    //             formData.tableId,
-
-    //         cupboardId:
-    //             formData.cupboardId,
-
-    //         allocatedDate:
-    //             new Date().toLocaleDateString(),
-    //     };
-
-    //     const updatedAllocations = [
-    //         ...allocations,
-    //         allocation,
-    //     ];
-
-    //     localStorage.setItem(
-    //         "allocations",
-    //         JSON.stringify(updatedAllocations)
-    //     );
-
-    //     setAllocations(updatedAllocations);
-
-    //     setFormData({
-    //         studentName: "",
-    //         roomId: "",
-    //         bedId: "",
-    //         tableId: "",
-    //         cupboardId: "",
-    //     });
-
-    //     setSelectedRoom(null);
-
-    //     alert("Student Allocated Successfully");
-    // };
+    const resetForm = () => {
+        setFormData(emptyForm);
+        setEditingId(null);
+        setSearchParams({});
+    };
 
     const saveAllocation = () => {
-        if (
-            !formData.studentName ||
-            !formData.roomId ||
-            !formData.bedId
-        ) {
-            alert("Please fill required fields");
+        if (!formData.studentId) {
+            alert("Please select a saved student/person profile first");
             return;
         }
 
-        const existingAllocations =
-            JSON.parse(
-                localStorage.getItem("allocations")
-            ) || [];
+        if (!formData.roomId || !formData.bedId) {
+            alert("Please select room and bed");
+            return;
+        }
 
-        // Check Bed Occupied
-        const bedOccupied =
-            existingAllocations.find(
-                (item) =>
-                    String(item.bedId) ===
-                    String(formData.bedId)
-            );
+        const student = students.find((item) => String(item.id) === String(formData.studentId));
+        if (!student) {
+            alert("Selected profile was not found");
+            return;
+        }
 
-        if (bedOccupied) {
+        const room = rooms.find((item) => String(item.id) === String(formData.roomId));
+        if (!room) {
+            alert("Selected room was not found");
+            return;
+        }
+
+        if (isItemUnavailable("bed", formData.bedId)) {
             alert("Selected bed already occupied");
             return;
         }
 
-        const room =
-            rooms.find(
-                (item) =>
-                    String(item.id) ===
-                    String(formData.roomId)
-            ) || {};
+        if (formData.tableId && isItemUnavailable("table", formData.tableId)) {
+            alert("Selected table already allotted");
+            return;
+        }
 
-        const bed =
-            room.beds?.find(
-                (item) =>
-                    String(item.id) ===
-                    String(formData.bedId)
-            ) || {};
+        if (formData.cupboardId && isItemUnavailable("cupboard", formData.cupboardId)) {
+            alert("Selected cupboard already allotted");
+            return;
+        }
 
-        const table =
-            room.tables?.find(
-                (item) =>
-                    String(item.id) ===
-                    String(formData.tableId)
-            ) || {};
-
-        const cupboard =
-            room.cupboards?.find(
-                (item) =>
-                    String(item.id) ===
-                    String(formData.cupboardId)
-            ) || {};
+        const bed = room.beds?.find((item) => String(item.id) === String(formData.bedId));
+        const table = room.tables?.find((item) => String(item.id) === String(formData.tableId));
+        const cupboard = room.cupboards?.find((item) => String(item.id) === String(formData.cupboardId));
 
         const allocation = {
-            id: Date.now(),
-
-            studentName:
-                formData.studentName,
-
-            roomId:
-                formData.roomId,
-
-            roomNumber:
-                room.roomNumber,
-
-            roomType:
-                room.roomType,
-
-            bedId:
-                formData.bedId,
-
-            bedLabel:
-                bed.label || "",
-
-            tableId:
-                formData.tableId,
-
-            tableLabel:
-                table.label || "",
-
-            cupboardId:
-                formData.cupboardId,
-
-            cupboardLabel:
-                cupboard.label || "",
-
+            id: editingId || Date.now(),
+            studentId: student.id,
+            studentName: student.name,
+            phone: student.phone || "",
+            email: student.email || "",
+            roomId: room.id,
+            roomNumber: room.roomNumber,
+            roomType: room.roomType,
+            bedId: formData.bedId,
+            bedLabel: bed?.label || "",
+            tableId: formData.tableId,
+            tableLabel: table?.label || "",
+            cupboardId: formData.cupboardId,
+            cupboardLabel: cupboard?.label || "",
             allocatedDate:
-                new Date().toLocaleDateString(),
-
+                allocations.find((item) => item.id === editingId)?.allocatedDate || new Date().toLocaleDateString(),
             status: "Occupied",
         };
 
-        const updatedAllocations = [
-            ...existingAllocations,
-            allocation,
-        ];
+        const updatedAllocations = editingId
+            ? allocations.map((item) => (item.id === editingId ? allocation : item))
+            : [...allocations, allocation];
 
-        localStorage.setItem(
-            "allocations",
-            JSON.stringify(updatedAllocations)
-        );
-
+        saveStoredAllocations(updatedAllocations);
         setAllocations(updatedAllocations);
+        resetForm();
 
-        setFormData({
-            studentName: "",
-            roomId: "",
-            bedId: "",
-            tableId: "",
-            cupboardId: "",
-        });
-
-        setSelectedRoom(null);
-
-        alert("Student Allocated Successfully");
+        alert(editingId ? "Allocation Updated Successfully" : "Student Allocated Successfully");
     };
+
+    const editAllocation = (allocation) => {
+        setEditingId(allocation.id);
+        setFormData({
+            studentId: allocation.studentId || "",
+            studentName: allocation.studentName || "",
+            phone: allocation.phone || "",
+            email: allocation.email || "",
+            roomId: allocation.roomId || "",
+            bedId: allocation.bedId || "",
+            tableId: allocation.tableId || "",
+            cupboardId: allocation.cupboardId || "",
+        });
+        setSearchParams({ allocationId: allocation.id });
+    };
+
     const deleteAllocation = (id) => {
-        const updated = allocations.filter(
-            (item) => item.id !== id
-        );
+        const updated = allocations.filter((item) => item.id !== id);
 
-        localStorage.setItem(
-            "allocations",
-            JSON.stringify(updated)
-        );
-
+        saveStoredAllocations(updated);
         setAllocations(updated);
+
+        if (editingId === id) resetForm();
     };
 
     return (
         <AdminLayout>
             <div className="space-y-6">
-                <h1 className="text-3xl font-bold">
-                    Student Allocation
-                </h1>
+                <h1 className="text-3xl font-bold">Student Allocation</h1>
 
-                {/* Allocation Form */}
                 <div className="bg-white p-6 rounded-xl shadow">
-
+                    <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                        <h2 className="text-xl font-bold">{editingId ? "Update Allocation" : "New Allocation"}</h2>
+                        <Link to="/students" className="self-start rounded-lg bg-indigo-600 px-4 py-2 text-white">
+                            Add New Profile
+                        </Link>
+                    </div>
                     <div className="grid md:grid-cols-2 gap-4">
+                        <select
+                            value={formData.studentId}
+                            onChange={(e) => handleStudentChange(e.target.value)}
+                            className="border p-3 rounded-lg"
+                        >
+                            <option value="">Select Saved Profile</option>
+                            {students.map((student) => (
+                                <option key={student.id} value={student.id}>
+                                    {student.name} {student.phone ? `- ${student.phone}` : ""}
+                                </option>
+                            ))}
+                        </select>
+                        {students.length === 0 && (
+                            <div className="md:col-span-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-amber-800">
+                                Add a student/person profile before allocating any room item.
+                            </div>
+                        )}
 
                         <input
                             type="text"
-                            placeholder="Student Name"
+                            placeholder="Student / Person Name"
                             value={formData.studentName}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    studentName:
-                                        e.target.value,
-                                })
-                            }
-                            className="border p-3 rounded-lg"
+                            readOnly
+                            className="border p-3 rounded-lg bg-gray-100"
+                        />
+
+                        <input
+                            type="text"
+                            placeholder="Phone"
+                            value={formData.phone}
+                            readOnly
+                            className="border p-3 rounded-lg bg-gray-100"
+                        />
+
+                        <input
+                            type="email"
+                            placeholder="Email"
+                            value={formData.email}
+                            readOnly
+                            className="border p-3 rounded-lg bg-gray-100"
                         />
 
                         <select
                             value={formData.roomId}
-                            onChange={(e) =>
-                                handleRoomChange(
-                                    e.target.value
-                                )
-                            }
+                            onChange={(e) => handleRoomChange(e.target.value)}
                             className="border p-3 rounded-lg"
                         >
-                            <option value="">
-                                Select Room
-                            </option>
-
+                            <option value="">Select Room</option>
                             {rooms.map((room) => (
-                                <option
-                                    key={room.id}
-                                    value={room.id}
-                                >
-                                    {room.roomNumber}
-                                    {" - "}
-                                    {room.roomType}
+                                <option key={room.id} value={room.id}>
+                                    {room.roomNumber} - {room.roomType}
                                 </option>
                             ))}
                         </select>
@@ -312,216 +283,113 @@ const StudentAllocation = () => {
                         {selectedRoom && (
                             <>
                                 <select
-                                    value={
-                                        formData.bedId
-                                    }
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-                                            bedId:
-                                                e.target
-                                                    .value,
-                                        })
-                                    }
+                                    value={formData.bedId}
+                                    onChange={(e) => setFormData({ ...formData, bedId: e.target.value })}
                                     className="border p-3 rounded-lg"
                                 >
-                                    <option value="">
-                                        Select Bed
-                                    </option>
-
-                                    {selectedRoom.beds?.map(
-                                        (bed) => (
-                                            <option
-                                                key={
-                                                    bed.id
-                                                }
-                                                value={
-                                                    bed.id
-                                                }
-                                            >
-                                                {
-                                                    bed.label
-                                                }
+                                    <option value="">Select Bed</option>
+                                    {selectedRoom.beds?.map((bed) => {
+                                        const unavailable = isItemUnavailable("bed", bed.id);
+                                        return (
+                                            <option key={bed.id} value={bed.id} disabled={unavailable}>
+                                                {bed.label}
+                                                {unavailable ? " (Occupied)" : ""}
                                             </option>
-                                        )
-                                    )}
+                                        );
+                                    })}
                                 </select>
 
                                 <select
-                                    value={
-                                        formData.tableId
-                                    }
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-                                            tableId:
-                                                e.target
-                                                    .value,
-                                        })
-                                    }
+                                    value={formData.tableId}
+                                    onChange={(e) => setFormData({ ...formData, tableId: e.target.value })}
                                     className="border p-3 rounded-lg"
                                 >
-                                    <option value="">
-                                        Select Table
-                                    </option>
-
-                                    {selectedRoom.tables?.map(
-                                        (table) => (
-                                            <option
-                                                key={
-                                                    table.id
-                                                }
-                                                value={
-                                                    table.id
-                                                }
-                                            >
-                                                {
-                                                    table.label
-                                                }
+                                    <option value="">Select Table</option>
+                                    {selectedRoom.tables?.map((table) => {
+                                        const unavailable = isItemUnavailable("table", table.id);
+                                        return (
+                                            <option key={table.id} value={table.id} disabled={unavailable}>
+                                                {table.label}
+                                                {unavailable ? " (Allotted)" : ""}
                                             </option>
-                                        )
-                                    )}
+                                        );
+                                    })}
                                 </select>
 
                                 <select
-                                    value={
-                                        formData.cupboardId
-                                    }
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-                                            cupboardId:
-                                                e.target
-                                                    .value,
-                                        })
-                                    }
+                                    value={formData.cupboardId}
+                                    onChange={(e) => setFormData({ ...formData, cupboardId: e.target.value })}
                                     className="border p-3 rounded-lg"
                                 >
-                                    <option value="">
-                                        Select Cupboard
-                                    </option>
-
-                                    {selectedRoom.cupboards?.map(
-                                        (
-                                            cupboard
-                                        ) => (
-                                            <option
-                                                key={
-                                                    cupboard.id
-                                                }
-                                                value={
-                                                    cupboard.id
-                                                }
-                                            >
-                                                {
-                                                    cupboard.label
-                                                }
+                                    <option value="">Select Cupboard</option>
+                                    {selectedRoom.cupboards?.map((cupboard) => {
+                                        const unavailable = isItemUnavailable("cupboard", cupboard.id);
+                                        return (
+                                            <option key={cupboard.id} value={cupboard.id} disabled={unavailable}>
+                                                {cupboard.label}
+                                                {unavailable ? " (Allotted)" : ""}
                                             </option>
-                                        )
-                                    )}
+                                        );
+                                    })}
                                 </select>
                             </>
                         )}
                     </div>
-                    <button
-                        onClick={saveAllocation}
-                        className="mt-5 px-6 py-3 bg-green-600 text-white rounded-lg"
-                    >
-                        Allocate Student
-                    </button>
+
+                    <div className="mt-5 flex gap-3">
+                        <button onClick={saveAllocation} className="px-6 py-3 bg-green-600 text-white rounded-lg">
+                            {editingId ? "Update Allocation" : "Allocate Student"}
+                        </button>
+                        {editingId && (
+                            <button onClick={resetForm} className="px-6 py-3 bg-gray-600 text-white rounded-lg">
+                                Cancel Edit
+                            </button>
+                        )}
+                    </div>
                 </div>
 
-                {/* Allocation List */}
                 <div className="bg-white p-6 rounded-xl shadow">
-                    <h2 className="text-xl font-bold mb-4">
-                        Allocation List
-                    </h2>
+                    <h2 className="text-xl font-bold mb-4">Allocation List</h2>
                     <div className="overflow-auto">
                         <table className="w-full border">
                             <thead>
                                 <tr className="bg-gray-100">
-                                    <th className="border p-2">
-                                        Student
-                                    </th>
-                                    <th className="border p-2">
-                                        Room
-                                    </th>
-                                    <th className="border p-2">
-                                        Bed
-                                    </th>
-                                    <th className="border p-2">
-                                        Table
-                                    </th>
-                                    <th className="border p-2">
-                                        Cupboard
-                                    </th>
-                                    <th className="border p-2">
-                                        Date
-                                    </th>
-                                    <th className="border p-2">
-                                        Action
-                                    </th>
+                                    <th className="border p-2">Student</th>
+                                    <th className="border p-2">Room</th>
+                                    <th className="border p-2">Bed</th>
+                                    <th className="border p-2">Table</th>
+                                    <th className="border p-2">Cupboard</th>
+                                    <th className="border p-2">Date</th>
+                                    <th className="border p-2">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {allocations.map(
-                                    (item) => (
-                                        <tr
-                                            key={
-                                                item.id
-                                            }
-                                        >
-                                            <td className="border p-2">
-                                                {
-                                                    item.studentName
-                                                }
-                                            </td>
-
-                                            <td className="border p-2">
-                                                {
-                                                    item.roomNumber
-                                                }
-                                            </td>
-
-                                            <td className="border p-2">
-                                                {
-                                                    item.bedId
-                                                }
-                                            </td>
-
-                                            <td className="border p-2">
-                                                {
-                                                    item.tableId
-                                                }
-                                            </td>
-
-                                            <td className="border p-2">
-                                                {
-                                                    item.cupboardId
-                                                }
-                                            </td>
-
-                                            <td className="border p-2">
-                                                {
-                                                    item.allocatedDate
-                                                }
-                                            </td>
-
-                                            <td className="border p-2">
+                                {allocations.map((item) => (
+                                    <tr key={item.id}>
+                                        <td className="border p-2">{item.studentName}</td>
+                                        <td className="border p-2">{item.roomNumber}</td>
+                                        <td className="border p-2">{item.bedLabel || item.bedId}</td>
+                                        <td className="border p-2">{item.tableLabel || "-"}</td>
+                                        <td className="border p-2">{item.cupboardLabel || "-"}</td>
+                                        <td className="border p-2">{item.allocatedDate}</td>
+                                        <td className="border p-2">
+                                            <div className="flex gap-2">
                                                 <button
-                                                    onClick={() =>
-                                                        deleteAllocation(
-                                                            item.id
-                                                        )
-                                                    }
+                                                    onClick={() => editAllocation(item)}
+                                                    className="bg-indigo-600 text-white px-3 py-1 rounded"
+                                                >
+                                                    Edit
+                                                </button>
+                                                <button
+                                                    onClick={() => deleteAllocation(item.id)}
                                                     className="bg-red-600 text-white px-3 py-1 rounded"
                                                 >
                                                     Delete
                                                 </button>
-                                            </td>
-                                        </tr>
-                                    )
-                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
                             </tbody>
                         </table>
                     </div>

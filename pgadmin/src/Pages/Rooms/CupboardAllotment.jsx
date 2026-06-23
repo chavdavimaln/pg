@@ -2,13 +2,11 @@
 
 import React from "react";
 import AdminLayout from "../../Components/Layout/AdminLayout";
+import { getStoredAllocations } from "../../Utils/allocationHelper";
 
 const CupboardAllotment = () => {
 
-    const allocations =
-        JSON.parse(
-            localStorage.getItem("allocations")
-        ) || [];
+    const allocations = getStoredAllocations().filter(item => item.cupboardId);
 
     return (
         <AdminLayout>
@@ -40,7 +38,7 @@ const CupboardAllotment = () => {
                                     {item.roomNumber}
                                 </td>
                                 <td className="border p-3">
-                                    {item.cupboardLabel}
+                                    {item.cupboardLabel || item.cupboardId}
                                 </td>
                             </tr>
                         ))}

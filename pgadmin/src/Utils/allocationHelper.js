@@ -1,26 +1,65 @@
-export const isOccupied = (
-    type,
-    itemId
-) => {
+export const parseStoredArray = (key) => {
+    try {
+        const value = JSON.parse(localStorage.getItem(key));
+        return Array.isArray(value) ? value.filter(Boolean) : [];
+    } catch {
+        return [];
+    }
+};
 
-    const allocations =
-        JSON.parse(
-            localStorage.getItem(
-                "allocations"
-            )
-        ) || [];
+export const getStoredRooms = () => parseStoredArray("rooms");
 
-    return allocations.some((a) => {
+export const getStoredAllocations = () => parseStoredArray("allocations");
 
-        if (type === "bed")
-            return a.bedId === itemId;
+export const getStoredStudents = () => parseStoredArray("students");
 
-        if (type === "table")
-            return a.tableId === itemId;
+export const saveStoredRooms = (rooms) => {
+    localStorage.setItem("rooms", JSON.stringify(rooms.filter(Boolean)));
+};
 
-        if (type === "cupboard")
-            return a.cupboardId === itemId;
+export const saveStoredAllocations = (allocations) => {
+    localStorage.setItem("allocations", JSON.stringify(allocations.filter(Boolean)));
+};
+
+export const saveStoredStudents = (students) => {
+    localStorage.setItem("students", JSON.stringify(students.filter(Boolean)));
+};
+
+export const isOccupied = (type, itemId, roomId) => {
+    const allocations = getStoredAllocations();
+
+    return allocations.some((allocation) => {
+        if (roomId && String(allocation.roomId) !== String(roomId)) return false;
+
+        if (type === "bed") return String(allocation.bedId) === String(itemId);
+
+        if (type === "table") return String(allocation.tableId) === String(itemId);
+
+        if (type === "cupboard") return String(allocation.cupboardId) === String(itemId);
 
         return false;
     });
 };
+
+export const isRoomOccupied = (roomId, allocations = getStoredAllocations()) =>
+    allocations.some((allocation) => String(allocation.roomId) === String(roomId));
+
+export const getVacantBedsForRoom = (room, allocations = getStoredAllocations()) => {
+    const occupiedBedIds = allocations
+        .filter((allocation) => String(allocation.roomId) === String(room.id))
+        .map((allocation) => String(allocation.bedId));
+
+    return (room.beds || []).filter((bed) => !occupiedBedIds.includes(String(bed.id)));
+};
+
+export const isRoomVacant = (room, allocations = getStoredAllocations()) =>
+    getVacantBedsForRoom(room, allocations).length > 0;
+
+export const getAllocationForItem = (type, itemId, roomId, allocations = getStoredAllocations()) =>
+    allocations.find((allocation) => {
+        if (String(allocation.roomId) !== String(roomId)) return false;
+        if (type === "bed") return String(allocation.bedId) === String(itemId);
+        if (type === "table") return String(allocation.tableId) === String(itemId);
+        if (type === "cupboard") return String(allocation.cupboardId) === String(itemId);
+        return false;
+    });

@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import AdminLayout from "../../Components/Layout/AdminLayout";
 import RoomCanvas from "../../Components/Rooms/RoomCanvas";
 import { calculateResponsiveLayout } from "../../Utils/roomLayoutEngine";
+import { getStoredRooms, saveStoredRooms } from "../../Utils/allocationHelper";
 
 const getRoomType = (beds) => {
     if (beds === 1) return "Single Room";
@@ -12,7 +13,7 @@ const getRoomType = (beds) => {
     return "Common Room";
 };
 const generateRoomNumber = () => {
-    const rooms = JSON.parse(localStorage.getItem("rooms")) || [];
+    const rooms = getStoredRooms();
 
     return `R-${String(rooms.length + 1).padStart(3, "0")}`;
 };
@@ -28,6 +29,7 @@ const RoomAdd = () => {
     const [beds, setBeds] = useState([]);
     const [tables, setTables] = useState([]);
     const [cupboards, setCupboards] = useState([]);
+    const [doors, setDoors] = useState([]);
     const [selectedItem, setSelectedItem] = useState(null);
     const generateLayout = () => {
         const autoWidth = Number(roomData.bedCount) <= 2 ? 600 : Number(roomData.bedCount) <= 4 ? 900 : 1200;
@@ -36,8 +38,10 @@ const RoomAdd = () => {
         setBeds(result.beds);
         setTables(result.tables);
         setCupboards(result.cupboards);
+        setDoors(result.doors?.slice(0, 1) || []);
         setRoomData((prev) => ({
             ...prev,
+            roomType: getRoomType(Number(roomData.bedCount)),
             canvasWidth: result.canvasWidth,
             canvasHeight: result.canvasHeight,
         }));
@@ -47,20 +51,22 @@ const RoomAdd = () => {
             alert("Please generate layout first");
             return;
         }
-        const rooms = JSON.parse(localStorage.getItem("rooms")) || [];
+        const rooms = getStoredRooms();
         const room = {
             id: Date.now(),
             roomNumber: roomData.roomNumber,
-            roomType: roomData.roomType,
+            roomType: getRoomType(Number(roomData.bedCount)),
             bedCount: roomData.bedCount,
             canvasWidth: roomData.canvasWidth,
             canvasHeight: roomData.canvasHeight,
+            status: "Available",
             beds,
             tables,
             cupboards,
+            doors,
         };
         rooms.push(room);
-        localStorage.setItem("rooms", JSON.stringify(rooms));
+        saveStoredRooms(rooms);
         console.log("Saved Rooms", rooms);
         alert("Room Saved Successfully");
         setRoomData({
@@ -73,6 +79,7 @@ const RoomAdd = () => {
         setBeds([]);
         setTables([]);
         setCupboards([]);
+        setDoors([]);
     };
     const isOverlapping = (x, y, width, height, currentId) => {
         const items = [...beds, ...tables, ...cupboards];
@@ -112,23 +119,8 @@ const RoomAdd = () => {
 
         setCupboards(cupboards.map((item) => (item.id === id ? { ...item, x, y } : item)));
     };
-    const room = {
-        ...
-        beds,
-        tables,
-        cupboards,
-
-        doors: [
-            {
-                id: Date.now() + 999,
-                label: "Door",
-                x: 0,
-                y: roomData.canvasHeight - 40,
-                width: 80,
-                height: 20,
-                rotation: 0,
-            },
-        ],
+    const updateDoorPosition = (id, x, y) => {
+        setDoors(doors.map((item) => (item.id === id ? { ...item, x, y } : item)));
     };
     return (
         <AdminLayout>
@@ -159,7 +151,7 @@ const RoomAdd = () => {
                                 value={roomData.bedCount}
                                 onChange={(e) => {
                                     const count = Math.min(6, Number(e.target.value));
-                                    setRoomData({ ...roomData, bedCount: count });
+                                    setRoomData({ ...roomData, bedCount: count, roomType: getRoomType(count) });
                                 }}
                                 className="border p-3 rounded-lg flex-1"
                             >
@@ -207,11 +199,13 @@ const RoomAdd = () => {
                                         beds={beds}
                                         tables={tables}
                                         cupboards={cupboards}
+                                        doors={doors}
                                         selectedItem={selectedItem}
                                         setSelectedItem={setSelectedItem}
                                         updateBedPosition={updateBedPosition}
                                         updateTablePosition={updateTablePosition}
                                         updateCupboardPosition={updateCupboardPosition}
+                                        updateDoorPosition={updateDoorPosition}
                                         canvasWidth={roomData.canvasWidth}
                                         canvasHeight={roomData.canvasHeight}
                                     />

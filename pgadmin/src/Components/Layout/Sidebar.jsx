@@ -13,12 +13,12 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         {
             name: "Dashboard",
             icon: <LayoutDashboard size={20} />,
-            path: "/dashboard"
+            path: "/"
         },
         {
-            name: "Profile",
+            name: "Profiles",
             icon: <User size={20} />,
-            path: "/profile"
+            path: "/students"
         },
         {
             name: "Student Allocation",

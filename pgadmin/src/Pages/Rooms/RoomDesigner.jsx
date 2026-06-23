@@ -1,13 +1,21 @@
 // pgadmin/src/Pages/Rooms/RoomDesigner.jsx
 
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import AdminLayout from "../../Components/Layout/AdminLayout";
 import RoomCanvas from "../../Components/Rooms/RoomCanvas";
 import RoomToolbar from "../../Components/Rooms/RoomToolbar";
-import roomLayout from "../../Data/RoomLayout";
 import { GRID_SIZE } from "../../Utils/gridConfig";
 import { getRotatedSize } from "../../Utils/gridConfig";
+import {
+    getAllocationForItem,
+    getStoredAllocations,
+    getStoredRooms,
+    getStoredStudents,
+    isOccupied,
+    saveStoredAllocations,
+    saveStoredRooms,
+} from "../../Utils/allocationHelper";
 // import { calculateResponsiveLayout } from "../../Utils/roomLayoutEngine";
 
 const getRoomType = (beds) => {
@@ -20,7 +28,7 @@ const getRoomType = (beds) => {
 };
 const RoomDesigner = () => {
     const { id } = useParams();
-    const rooms = JSON.parse(localStorage.getItem("rooms")) || [];
+    const rooms = getStoredRooms();
     const roomData = rooms.find((room) => String(room.id) === String(id));
     const [beds, setBeds] = useState([]);
     const [tables, setTables] = useState([]);
@@ -29,18 +37,23 @@ const RoomDesigner = () => {
     const [selectedItem, setSelectedItem] = useState(null);
     const [canvasWidth, setCanvasWidth] = useState(600);
     const [canvasHeight, setCanvasHeight] = useState(400);
+    const [allocations, setAllocations] = useState([]);
+    const [students, setStudents] = useState([]);
 
     // setDoors(room.doors || []);
 
     useEffect(() => {
-        const rooms = JSON.parse(localStorage.getItem("rooms")) || [];
+        const rooms = getStoredRooms();
         const room = rooms.find((item) => String(item.id) === String(id));
         if (!room) return;
         setBeds(room.beds || []);
         setTables(room.tables || []);
         setCupboards(room.cupboards || []);
+        setDoors(room.doors || []);
         setCanvasWidth(room.canvasWidth || 600);
         setCanvasHeight(room.canvasHeight || 400);
+        setAllocations(getStoredAllocations());
+        setStudents(getStoredStudents());
     }, [id]);
 
     const addBed = () => {
@@ -60,6 +73,11 @@ const RoomDesigner = () => {
 
     const removeBed = () => {
         if (beds.length <= 1) return;
+        const bed = beds[beds.length - 1];
+        if (isOccupied("bed", bed.id, id)) {
+            alert("Cannot remove an occupied bed. Delete the student allocation first.");
+            return;
+        }
         const updatedBeds = beds.slice(0, -1).map((item, index) => ({ ...item, label: `Bed-${index + 1}` }));
         setBeds(updatedBeds);
     };
@@ -84,6 +102,11 @@ const RoomDesigner = () => {
 
     const removeTable = () => {
         if (tables.length <= 1) return;
+        const table = tables[tables.length - 1];
+        if (isOccupied("table", table.id, id)) {
+            alert("Cannot remove an allotted table. Delete the student allocation first.");
+            return;
+        }
         const updatedTables = tables.slice(0, -1).map((item, index) => ({
             ...item,
             label: `Table-${index + 1}`,
@@ -128,6 +151,11 @@ const RoomDesigner = () => {
 
     const removeCupboard = () => {
         if (cupboards.length <= 1) return;
+        const cupboard = cupboards[cupboards.length - 1];
+        if (isOccupied("cupboard", cupboard.id, id)) {
+            alert("Cannot remove an allotted cupboard. Delete the student allocation first.");
+            return;
+        }
         const updatedCupboards = cupboards.slice(0, -1).map((item, index) => ({
             ...item,
             label: `Cupboard-${index + 1}`,
@@ -143,15 +171,27 @@ const RoomDesigner = () => {
 
                 return;
             }
+            if (isOccupied("bed", selectedItem.id, id)) {
+                alert("Cannot delete an occupied bed. Delete the student allocation first.");
+                return;
+            }
 
             setBeds(beds.filter((item) => item.id !== selectedItem.id));
         }
 
         if (selectedItem.type === "table") {
+            if (isOccupied("table", selectedItem.id, id)) {
+                alert("Cannot delete an allotted table. Delete the student allocation first.");
+                return;
+            }
             setTables(tables.filter((item) => item.id !== selectedItem.id));
         }
 
         if (selectedItem.type === "cupboard") {
+            if (isOccupied("cupboard", selectedItem.id, id)) {
+                alert("Cannot delete an allotted cupboard. Delete the student allocation first.");
+                return;
+            }
             setCupboards(cupboards.filter((item) => item.id !== selectedItem.id));
         }
 
@@ -228,36 +268,60 @@ const RoomDesigner = () => {
         if (selectedItem.type === "door") rotateCollection(doors, setDoors);
     };
     const updateBedPosition = (id, x, y) => {
-        if (isOverlapping(x, y, 80, 160, id)) {
+        const bed = beds.find((item) => item.id === id);
+        if (!bed) return;
+
+        if (isOutOfBounds(x, y, bed.width, bed.height) || isOverlapping(x, y, bed.width, bed.height, id)) {
             alert("Cannot overlap another item");
             return;
         }
 
         setBeds(beds.map((item) => (item.id === id ? { ...item, x, y } : item)));
+        setSelectedItem({ ...bed, x, y, type: "bed" });
     };
 
     const updateTablePosition = (id, x, y) => {
-        if (isOverlapping(x, y, 80, 80, id)) {
+        const table = tables.find((item) => item.id === id);
+        if (!table) return;
+
+        if (isOutOfBounds(x, y, table.width, table.height) || isOverlapping(x, y, table.width, table.height, id)) {
             alert("Cannot overlap another item");
             return;
         }
         setTables(tables.map((item) => (item.id === id ? { ...item, x, y } : item)));
+        setSelectedItem({ ...table, x, y, type: "table" });
     };
 
     const updateCupboardPosition = (id, x, y) => {
-        if (isOverlapping(x, y, 120, 80, id)) {
+        const cupboard = cupboards.find((item) => item.id === id);
+        if (!cupboard) return;
+
+        if (
+            isOutOfBounds(x, y, cupboard.width, cupboard.height) ||
+            isOverlapping(x, y, cupboard.width, cupboard.height, id)
+        ) {
             alert("Cannot overlap another item");
             return;
         }
 
         setCupboards(cupboards.map((item) => (item.id === id ? { ...item, x, y } : item)));
+        setSelectedItem({ ...cupboard, x, y, type: "cupboard" });
     };
 
     const updateDoorPosition = (id, x, y) => {
+        const door = doors.find((item) => item.id === id);
+        if (!door) return;
+
+        if (isOutOfBounds(x, y, door.width, door.height) || isOverlapping(x, y, door.width, door.height, id)) {
+            alert("Cannot overlap another item");
+            return;
+        }
+
         setDoors(doors.map((item) => (item.id === id ? { ...item, x, y } : item)));
+        setSelectedItem({ ...door, x, y, type: "door" });
     };
     const saveLayout = () => {
-        const rooms = JSON.parse(localStorage.getItem("rooms")) || [];
+        const rooms = getStoredRooms();
         const updatedRooms = rooms.map((room) => {
             if (String(room.id) === String(id)) {
                 return {
@@ -271,9 +335,10 @@ const RoomDesigner = () => {
                     doors,
                 };
             }
+            return room;
         });
 
-        localStorage.setItem("rooms", JSON.stringify(updatedRooms));
+        saveStoredRooms(updatedRooms);
 
         alert("Layout Updated Successfully");
     };
@@ -320,14 +385,116 @@ const RoomDesigner = () => {
 
         return { x: 0, y: 0 };
     };
+    const isOutOfBounds = (x, y, width, height) =>
+        x < 0 || y < 0 || x + width > canvasWidth || y + height > canvasHeight;
+
     const isOverlapping = (x, y, width, height, currentId) => {
-        const items = [...beds, ...tables, ...cupboards];
+        const items = [...beds, ...tables, ...cupboards, ...doors];
         return items.some((item) => {
             if (item.id === currentId) return false;
             const w = item.width || 80;
             const h = item.height || 80;
             return x < item.x + w && x + width > item.x && y < item.y + h && y + height > item.y;
         });
+    };
+
+    const getCurrentSelectedItem = () => {
+        if (!selectedItem) return null;
+
+        const collection = {
+            bed: beds,
+            table: tables,
+            cupboard: cupboards,
+            door: doors,
+        }[selectedItem.type];
+
+        return collection?.find((item) => item.id === selectedItem.id)
+            ? { ...collection.find((item) => item.id === selectedItem.id), type: selectedItem.type }
+            : null;
+    };
+
+    const moveSelectedItem = (deltaX, deltaY) => {
+        const item = getCurrentSelectedItem();
+        if (!item) return;
+
+        const x = item.x + deltaX;
+        const y = item.y + deltaY;
+
+        if (item.type === "bed") updateBedPosition(item.id, x, y);
+        if (item.type === "table") updateTablePosition(item.id, x, y);
+        if (item.type === "cupboard") updateCupboardPosition(item.id, x, y);
+        if (item.type === "door") updateDoorPosition(item.id, x, y);
+    };
+
+    useEffect(() => {
+        const handleKeyDown = (event) => {
+            const tagName = event.target.tagName?.toLowerCase();
+            if (!selectedItem || ["input", "select", "textarea", "button"].includes(tagName)) return;
+
+            const moves = {
+                ArrowUp: [0, -GRID_SIZE],
+                ArrowDown: [0, GRID_SIZE],
+                ArrowLeft: [-GRID_SIZE, 0],
+                ArrowRight: [GRID_SIZE, 0],
+            };
+
+            const move = moves[event.key];
+            if (!move) return;
+
+            event.preventDefault();
+            moveSelectedItem(move[0], move[1]);
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedItem, beds, tables, cupboards, doors, canvasWidth, canvasHeight]);
+
+    const getItemStatus = (type, item) => {
+        const allocation = getAllocationForItem(type, item.id, id, allocations);
+        return {
+            id: item.id,
+            allocation,
+            status: allocation ? "Allocated" : "Vacant",
+            student: allocation?.studentName || "-",
+            label: item.label,
+        };
+    };
+
+    const roomItems = [
+        ...beds.map((item) => ({ type: "bed", ...getItemStatus("bed", item) })),
+        ...tables.map((item) => ({ type: "table", ...getItemStatus("table", item) })),
+        ...cupboards.map((item) => ({ type: "cupboard", ...getItemStatus("cupboard", item) })),
+    ];
+
+    const changeAllocationProfile = (allocationId, studentId) => {
+        const student = students.find((item) => String(item.id) === String(studentId));
+        if (!student) return;
+
+        const updatedAllocations = allocations.map((allocation) =>
+            allocation.id === allocationId
+                ? {
+                      ...allocation,
+                      studentId: student.id,
+                      studentName: student.name,
+                      phone: student.phone || "",
+                      email: student.email || "",
+                  }
+                : allocation,
+        );
+
+        saveStoredAllocations(updatedAllocations);
+        setAllocations(updatedAllocations);
+    };
+
+    const getAllocateLink = (item) => {
+        const params = new URLSearchParams({ roomId: id });
+
+        if (item.type === "bed") params.set("bedId", item.id);
+        if (item.type === "table") params.set("tableId", item.id);
+        if (item.type === "cupboard") params.set("cupboardId", item.id);
+
+        return `/student-allocation?${params.toString()}`;
     };
 
     return (
@@ -408,7 +575,67 @@ const RoomDesigner = () => {
                     updateDoorPosition={updateDoorPosition}
                     canvasWidth={canvasWidth}
                     canvasHeight={canvasHeight}
+                    roomId={id}
                 />
+                <div className="bg-white rounded-xl shadow p-5">
+                    <h2 className="text-xl font-bold mb-4">Room Allocation Status</h2>
+                    <div className="overflow-auto">
+                        <table className="w-full border">
+                            <thead>
+                                <tr className="bg-gray-100">
+                                    <th className="border p-2">Item</th>
+                                    <th className="border p-2">Type</th>
+                                    <th className="border p-2">Status</th>
+                                    <th className="border p-2">Student / Person</th>
+                                    <th className="border p-2">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {roomItems.map((item) => (
+                                    <tr key={`${item.type}-${item.id}`}>
+                                        <td className="border p-2">{item.label}</td>
+                                        <td className="border p-2 capitalize">{item.type}</td>
+                                        <td className="border p-2">{item.status}</td>
+                                        <td className="border p-2">{item.student}</td>
+                                        <td className="border p-2">
+                                            {item.allocation ? (
+                                                <div className="flex flex-col gap-2 md:flex-row">
+                                                    <select
+                                                        value={item.allocation.studentId || ""}
+                                                        onChange={(e) =>
+                                                            changeAllocationProfile(item.allocation.id, e.target.value)
+                                                        }
+                                                        className="border rounded p-2"
+                                                    >
+                                                        <option value="">Select Profile</option>
+                                                        {students.map((student) => (
+                                                            <option key={student.id} value={student.id}>
+                                                                {student.name}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                    <Link
+                                                        to={`/student-allocation?allocationId=${item.allocation.id}`}
+                                                        className="bg-indigo-600 text-white px-3 py-2 rounded text-center"
+                                                    >
+                                                        Edit
+                                                    </Link>
+                                                </div>
+                                            ) : (
+                                                <Link
+                                                    to={getAllocateLink(item)}
+                                                    className="inline-block bg-green-600 text-white px-3 py-2 rounded"
+                                                >
+                                                    Allocate
+                                                </Link>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </AdminLayout>
     );

@@ -2,13 +2,11 @@
 
 import React from "react";
 import AdminLayout from "../../Components/Layout/AdminLayout";
+import { getStoredAllocations } from "../../Utils/allocationHelper";
 
 const TableAllotment = () => {
 
-    const allocations =
-        JSON.parse(
-            localStorage.getItem("allocations")
-        ) || [];
+    const allocations = getStoredAllocations().filter(item => item.tableId);
 
     return (
         <AdminLayout>
@@ -48,7 +46,7 @@ const TableAllotment = () => {
                                 </td>
 
                                 <td className="border p-3">
-                                    {item.tableLabel}
+                                    {item.tableLabel || item.tableId}
                                 </td>
                             </tr>
                         ))}

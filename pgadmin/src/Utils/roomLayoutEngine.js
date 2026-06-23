@@ -27,12 +27,7 @@ export const calculateResponsiveLayout = (bedCount, canvasWidth, canvasHeight) =
     let rows = Math.ceil(bedCount / cols);
     const sectionWidth = (width - (cols + 1) * GAP) / cols;
     const scale = Math.min(1, sectionWidth / 220);
-    const bedWidth = DEFAULT_SIZES.bed.width * scale;
     const bedHeight = DEFAULT_SIZES.bed.height * scale;
-    const tableWidth = DEFAULT_SIZES.table.width * scale;
-    const tableHeight = DEFAULT_SIZES.table.height * scale;
-    const cupboardWidth = DEFAULT_SIZES.cupboard.width * scale;
-    const cupboardHeight = DEFAULT_SIZES.cupboard.height * scale;
     const requiredHeight = rows * (bedHeight + 60) + GAP * (rows + 1);
 
     if (requiredHeight > height) {

@@ -2,23 +2,29 @@
 import React, { useRef } from "react";
 import Draggable from "react-draggable";
 import { isOccupied } from "../../Utils/allocationHelper";
-const TableItem = ({ item, onDrag, selected, onSelect }) => {
+const TableItem = ({ item, onDrag, selected, onSelect, roomId, scale = 1 }) => {
     const nodeRef = useRef(null);
     const occupied =
-        isOccupied("table", item.id);
+        isOccupied("table", item.id, roomId);
     return (
         <Draggable
             nodeRef={nodeRef}
             bounds="parent"
             position={{ x: item.x, y: item.y }}
             grid={[40, 40]}
-            onStop={(e, data) => onDrag(item.id, data.x, data.y)}
+            scale={scale}
+            onStop={(e, data) => {
+                if (data.x !== item.x || data.y !== item.y) {
+                    onDrag(item.id, data.x, data.y);
+                }
+            }}
         >
             <div
                 ref={nodeRef}
                 onClick={onSelect}
+                title={occupied ? `${item.label} allocated` : `${item.label} vacant`}
                 className={`absolute text-white text-[11px] rounded-lg flex items-center justify-center cursor-move 
-                    ${occupied ? "bg-orange-600 border-2 border-orange-800"
+                    ${occupied ? "bg-red-700 border-2 border-red-950"
                         : "bg-amber-600 border-2 border-amber-800"
                     }${selected ? "ring-4 ring-yellow-400" : ""}`}
                 style={{

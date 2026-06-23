@@ -2,13 +2,11 @@
 
 import React from "react";
 import AdminLayout from "../../Components/Layout/AdminLayout";
+import { getStoredAllocations } from "../../Utils/allocationHelper";
 
 const OccupiedBeds = () => {
 
-    const allocations =
-        JSON.parse(
-            localStorage.getItem("allocations")
-        ) || [];
+    const allocations = getStoredAllocations();
 
     return (
         <AdminLayout>
@@ -47,7 +45,7 @@ const OccupiedBeds = () => {
                                 </td>
 
                                 <td className="border p-3">
-                                    {item.bedLabel}
+                                    {item.bedLabel || item.bedId}
                                 </td>
                             </tr>
                         ))}

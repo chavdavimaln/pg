@@ -2,40 +2,23 @@
 
 import React from "react";
 import AdminLayout from "../../Components/Layout/AdminLayout";
+import { getStoredAllocations, getStoredRooms, getVacantBedsForRoom } from "../../Utils/allocationHelper";
 
 const VacantBeds = () => {
 
-    const rooms =
-        JSON.parse(
-            localStorage.getItem("rooms")
-        ) || [];
-
-    const allocations =
-        JSON.parse(
-            localStorage.getItem("allocations")
-        ) || [];
-
-    const occupiedBeds =
-        allocations.map(
-            item => item.bedId
-        );
+    const rooms = getStoredRooms();
+    const allocations = getStoredAllocations();
 
     const vacantBeds = [];
 
     rooms.forEach(room => {
-        room.beds?.forEach(bed => {
-
-            if (
-                !occupiedBeds.includes(bed.id)
-            ) {
-                vacantBeds.push({
-                    roomNumber:
-                        room.roomNumber,
-                    bedLabel:
-                        bed.label
-                });
-            }
-
+        getVacantBedsForRoom(room, allocations).forEach(bed => {
+            vacantBeds.push({
+                roomNumber:
+                    room.roomNumber,
+                bedLabel:
+                    bed.label
+            });
         });
     });
 

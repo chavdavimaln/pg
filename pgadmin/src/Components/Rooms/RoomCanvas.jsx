@@ -1,6 +1,6 @@
 // pgadmin/src/Components/Rooms/RoomCanvas.jsx
 
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import BedItem from "./BedItem";
 import TableItem from "./TableItem";
 import CupboardItem from "./CupboardItem";
@@ -17,21 +17,51 @@ const RoomCanvas = ({
     updateCupboardPosition,
     canvasWidth,
     canvasHeight,
+    roomId,
     doors,
     updateDoorPosition,
 }) => {
+    const wrapperRef = useRef(null);
+    const [scale, setScale] = useState(1);
     const GRID_SIZE = 80;
 
     const rows = Math.ceil(canvasHeight / GRID_SIZE);
     const cols = Math.ceil(canvasWidth / GRID_SIZE);
+
+    useEffect(() => {
+        const updateScale = () => {
+            if (!wrapperRef.current) return;
+            const availableWidth = wrapperRef.current.clientWidth;
+            const nextScale = Math.min(1, availableWidth / canvasWidth);
+            setScale(Number.isFinite(nextScale) ? nextScale : 1);
+        };
+
+        updateScale();
+
+        const observer =
+            typeof ResizeObserver !== "undefined"
+                ? new ResizeObserver(updateScale)
+                : null;
+        if (wrapperRef.current && observer) observer.observe(wrapperRef.current);
+
+        window.addEventListener("resize", updateScale);
+        return () => {
+            observer?.disconnect();
+            window.removeEventListener("resize", updateScale);
+        };
+    }, [canvasWidth]);
+
     return (
-        <div className="w-full overflow-auto">
+        <div ref={wrapperRef} className="w-full overflow-hidden">
             <div className="flex justify-center">
+                <div style={{ width: canvasWidth * scale, height: canvasHeight * scale }}>
                 <div
                     className="relative border-2 border-gray-300 rounded-xl shadow-lg bg-white overflow-hidden"
                     style={{
                         width: canvasWidth,
                         height: canvasHeight,
+                        transform: `scale(${scale})`,
+                        transformOrigin: "top left",
                         // backgroundImage: `
                         // linear-gradient(#dbe3ee 1px, transparent 1px),
                         // linear-gradient(90deg, #dbe3ee 1px, transparent 1px)
@@ -66,34 +96,40 @@ const RoomCanvas = ({
                         <BedItem
                             key={item.id}
                             item={item}
-                            selected={selectedItem?.id === item.id}
+                            selected={selectedItem?.type === "bed" && selectedItem?.id === item.id}
                             onSelect={() => setSelectedItem({ ...item, type: "bed" })}
                             onDrag={updateBedPosition}
+                            roomId={roomId}
+                            scale={scale}
                         />
                     ))}
                     {tables.map((item) => (
                         <TableItem
                             key={item.id}
                             item={item}
-                            selected={selectedItem?.id === item.id}
+                            selected={selectedItem?.type === "table" && selectedItem?.id === item.id}
                             onSelect={() => setSelectedItem({ ...item, type: "table" })}
                             onDrag={updateTablePosition}
+                            roomId={roomId}
+                            scale={scale}
                         />
                     ))}
                     {cupboards.map((item) => (
                         <CupboardItem
                             key={item.id}
                             item={item}
-                            selected={selectedItem?.id === item.id}
+                            selected={selectedItem?.type === "cupboard" && selectedItem?.id === item.id}
                             onSelect={() => setSelectedItem({ ...item, type: "cupboard" })}
                             onDrag={updateCupboardPosition}
+                            roomId={roomId}
+                            scale={scale}
                         />
                     ))}
                     {doors?.map((item) => (
                         <DoorItem
                             key={item.id}
                             item={item}
-                            selected={selectedItem?.id === item.id}
+                            selected={selectedItem?.type === "door" && selectedItem?.id === item.id}
                             onSelect={() =>
                                 setSelectedItem({
                                     ...item,
@@ -101,8 +137,10 @@ const RoomCanvas = ({
                                 })
                             }
                             onDrag={updateDoorPosition}
+                            scale={scale}
                         />
                     ))}
+                </div>
                 </div>
             </div>
         </div>
