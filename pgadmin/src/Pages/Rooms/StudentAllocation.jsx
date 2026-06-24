@@ -7,6 +7,7 @@ import {
     getStoredAllocations,
     getStoredRooms,
     getStoredStudents,
+    getVacantBedsForRoom,
     isOccupied,
     isRoomUnderMaintenance,
     saveStoredAllocations,
@@ -116,6 +117,28 @@ const StudentAllocation = () => {
 
     const isItemUnavailable = (type, itemId) =>
         selectedRoom && isOccupied(type, itemId, selectedRoom.id) && !isCurrentAllocationItem(type, itemId);
+
+    const getRoomAvailability = (room) => {
+        const currentRoom = editingId && String(formData.roomId) === String(room.id);
+        const vacantBeds = getVacantBedsForRoom(room, allocations).length;
+        const keepingCurrentBed = currentRoom && Boolean(formData.bedId);
+        const totalBeds = room.beds?.length || Number(room.bedCount) || 0;
+        const unavailable = totalBeds === 0 || (!keepingCurrentBed && vacantBeds === 0);
+
+        return {
+            currentRoom,
+            unavailable,
+            vacantBeds,
+            totalBeds,
+        };
+    };
+
+    const availableTables = selectedRoom
+        ? (selectedRoom.tables || []).filter((table) => !isItemUnavailable("table", table.id)).length
+        : 0;
+    const availableCupboards = selectedRoom
+        ? (selectedRoom.cupboards || []).filter((cupboard) => !isItemUnavailable("cupboard", cupboard.id)).length
+        : 0;
 
     const currentAllocation = useMemo(
         () => allocations.find((item) => String(item.id) === String(editingId)) || null,
@@ -365,31 +388,36 @@ const StudentAllocation = () => {
                         </Link>
                     </div>
                     <div className="grid md:grid-cols-2 gap-4">
-                        <select
-                            value={formData.studentId}
-                            onChange={(e) => handleStudentChange(e.target.value)}
-                            className="border p-3 rounded-lg"
-                        >
-                            <option value="">Select Saved Profile</option>
-                            {students.map((student) => (
-                                <option key={student.id} value={student.id}>
-                                    {student.name} {student.phone ? `- ${student.phone}` : ""}
-                                </option>
-                            ))}
-                        </select>
+                        <label className="flex flex-col items-start gap-1 text-sm font-medium text-gray-700">
+                            Saved Profile
+                            <select
+                                value={formData.studentId}
+                                onChange={(e) => handleStudentChange(e.target.value)}
+                                className="w-full rounded-lg border p-3 text-left font-normal text-gray-900"
+                            >
+                                <option value="">Select Saved Profile</option>
+                                {students.map((student) => (
+                                    <option key={student.id} value={student.id}>
+                                        {student.name} {student.phone ? `- ${student.phone}` : ""}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
                         {students.length === 0 && (
                             <div className="md:col-span-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-amber-800">
                                 Add a student/person profile before allocating any room item.
                             </div>
                         )}
 
-                        <input
-                            type="text"
-                            placeholder="Student / Person Name"
-                            value={formData.studentName}
-                            readOnly
-                            className="border p-3 rounded-lg bg-gray-100"
-                        />
+                        <label className="flex flex-col items-start gap-1 text-sm font-medium text-gray-700">
+                            Student / Person Name
+                            <input
+                                type="text"
+                                value={formData.studentName}
+                                readOnly
+                                className="w-full rounded-lg border bg-gray-100 p-3 text-left font-normal text-gray-900"
+                            />
+                        </label>
                         <div className="flex items-center gap-3 rounded-lg border bg-gray-100 p-3">
                             {formData.photo ? (
                                 <img
@@ -405,88 +433,122 @@ const StudentAllocation = () => {
                             <span className="text-sm text-gray-600">Profile photo</span>
                         </div>
 
-                        <input
-                            type="text"
-                            placeholder="Mobile"
-                            value={formData.phone}
-                            readOnly
-                            className="border p-3 rounded-lg bg-gray-100"
-                        />
+                        <label className="flex flex-col items-start gap-1 text-sm font-medium text-gray-700">
+                            Mobile
+                            <input
+                                type="text"
+                                value={formData.phone}
+                                readOnly
+                                className="w-full rounded-lg border bg-gray-100 p-3 text-left font-normal text-gray-900"
+                            />
+                        </label>
 
-                        <input
-                            type="email"
-                            placeholder="Email"
-                            value={formData.email}
-                            readOnly
-                            className="border p-3 rounded-lg bg-gray-100"
-                        />
+                        <label className="flex flex-col items-start gap-1 text-sm font-medium text-gray-700">
+                            Email
+                            <input
+                                type="email"
+                                value={formData.email}
+                                readOnly
+                                className="w-full rounded-lg border bg-gray-100 p-3 text-left font-normal text-gray-900"
+                            />
+                        </label>
 
-                        <select
-                            value={formData.roomId}
-                            onChange={(e) => handleRoomChange(e.target.value)}
-                            className="border p-3 rounded-lg"
-                        >
-                            <option value="">Select Room</option>
-                            {rooms.map((room) => (
-                                <option key={room.id} value={room.id}>
-                                    {room.roomNumber} - {room.roomType}
-                                    {isRoomUnderMaintenance(room) ? " (Under Maintenance)" : ""}
-                                </option>
-                            ))}
-                        </select>
+                        <label className="flex flex-col items-start gap-1 text-sm font-medium text-gray-700">
+                            Room
+                            <select
+                                value={formData.roomId}
+                                onChange={(e) => handleRoomChange(e.target.value)}
+                                className="w-full rounded-lg border p-3 text-left font-normal text-gray-900"
+                            >
+                                <option value="">Select Room</option>
+                                {rooms.map((room) => {
+                                    const availability = getRoomAvailability(room);
+
+                                    return (
+                                        <option key={room.id} value={room.id} disabled={availability.unavailable}>
+                                            {room.roomNumber} - {room.roomType}
+                                            {isRoomUnderMaintenance(room) ? " (Under Maintenance)" : ""}
+                                            {availability.totalBeds === 0 ? " (No beds)" : ""}
+                                            {availability.totalBeds > 0 && availability.vacantBeds === 0 && !availability.currentRoom
+                                                ? " (Fully Allocated)"
+                                                : ""}
+                                        </option>
+                                    );
+                                })}
+                            </select>
+                        </label>
 
                         {selectedRoom && (
                             <>
-                                <select
-                                    value={formData.bedId}
-                                    onChange={(e) => setFormData({ ...formData, bedId: e.target.value })}
-                                    className="border p-3 rounded-lg"
-                                >
-                                    <option value="">Select Bed</option>
-                                    {selectedRoom.beds?.map((bed) => {
-                                        const unavailable = isItemUnavailable("bed", bed.id);
-                                        return (
-                                            <option key={bed.id} value={bed.id} disabled={unavailable}>
-                                                {bed.label}
-                                                {unavailable ? " (Occupied)" : ""}
-                                            </option>
-                                        );
-                                    })}
-                                </select>
+                                <label className="flex flex-col items-start gap-1 text-sm font-medium text-gray-700">
+                                    Bed
+                                    <select
+                                        value={formData.bedId}
+                                        onChange={(e) => setFormData({ ...formData, bedId: e.target.value })}
+                                        className="w-full rounded-lg border p-3 text-left font-normal text-gray-900"
+                                    >
+                                        <option value="">Select Bed</option>
+                                        {selectedRoom.beds?.map((bed) => {
+                                            const unavailable = isItemUnavailable("bed", bed.id);
+                                            return (
+                                                <option key={bed.id} value={bed.id} disabled={unavailable}>
+                                                    {bed.label}
+                                                    {unavailable ? " (Occupied)" : ""}
+                                                </option>
+                                            );
+                                        })}
+                                    </select>
+                                </label>
 
-                                <select
-                                    value={formData.tableId}
-                                    onChange={(e) => setFormData({ ...formData, tableId: e.target.value })}
-                                    className="border p-3 rounded-lg"
-                                >
-                                    <option value="">Select Table (Optional)</option>
-                                    {selectedRoom.tables?.map((table) => {
-                                        const unavailable = isItemUnavailable("table", table.id);
-                                        return (
-                                            <option key={table.id} value={table.id} disabled={unavailable}>
-                                                {table.label}
-                                                {unavailable ? " (Allotted)" : ""}
-                                            </option>
-                                        );
-                                    })}
-                                </select>
+                                <label className="flex flex-col items-start gap-1 text-sm font-medium text-gray-700">
+                                    Table
+                                    <select
+                                        value={formData.tableId}
+                                        onChange={(e) => setFormData({ ...formData, tableId: e.target.value })}
+                                        disabled={(selectedRoom.tables || []).length > 0 && availableTables === 0}
+                                        className="w-full rounded-lg border p-3 text-left font-normal text-gray-900 disabled:bg-gray-100"
+                                    >
+                                        <option value="">
+                                            {(selectedRoom.tables || []).length > 0 && availableTables === 0
+                                                ? "All tables are allotted"
+                                                : "Select Table (Optional)"}
+                                        </option>
+                                        {selectedRoom.tables?.map((table) => {
+                                            const unavailable = isItemUnavailable("table", table.id);
+                                            return (
+                                                <option key={table.id} value={table.id} disabled={unavailable}>
+                                                    {table.label}
+                                                    {unavailable ? " (Allotted)" : ""}
+                                                </option>
+                                            );
+                                        })}
+                                    </select>
+                                </label>
 
-                                <select
-                                    value={formData.cupboardId}
-                                    onChange={(e) => setFormData({ ...formData, cupboardId: e.target.value })}
-                                    className="border p-3 rounded-lg"
-                                >
-                                    <option value="">Select Cupboard (Optional)</option>
-                                    {selectedRoom.cupboards?.map((cupboard) => {
-                                        const unavailable = isItemUnavailable("cupboard", cupboard.id);
-                                        return (
-                                            <option key={cupboard.id} value={cupboard.id} disabled={unavailable}>
-                                                {cupboard.label}
-                                                {unavailable ? " (Allotted)" : ""}
-                                            </option>
-                                        );
-                                    })}
-                                </select>
+                                <label className="flex flex-col items-start gap-1 text-sm font-medium text-gray-700">
+                                    Cupboard
+                                    <select
+                                        value={formData.cupboardId}
+                                        onChange={(e) => setFormData({ ...formData, cupboardId: e.target.value })}
+                                        disabled={(selectedRoom.cupboards || []).length > 0 && availableCupboards === 0}
+                                        className="w-full rounded-lg border p-3 text-left font-normal text-gray-900 disabled:bg-gray-100"
+                                    >
+                                        <option value="">
+                                            {(selectedRoom.cupboards || []).length > 0 && availableCupboards === 0
+                                                ? "All cupboards are allotted"
+                                                : "Select Cupboard (Optional)"}
+                                        </option>
+                                        {selectedRoom.cupboards?.map((cupboard) => {
+                                            const unavailable = isItemUnavailable("cupboard", cupboard.id);
+                                            return (
+                                                <option key={cupboard.id} value={cupboard.id} disabled={unavailable}>
+                                                    {cupboard.label}
+                                                    {unavailable ? " (Allotted)" : ""}
+                                                </option>
+                                            );
+                                        })}
+                                    </select>
+                                </label>
                             </>
                         )}
                     </div>

@@ -23,6 +23,7 @@ import CupboardAllotment from "./Pages/Rooms/CupboardAllotment";
 
 import StudentAllocation from "./Pages/Rooms/StudentAllocation";
 import StudentProfiles from "./Pages/Students/StudentProfiles";
+import PaymentManagement from "./Pages/Payments/PaymentManagement";
 
 import './App.css';
 
@@ -48,6 +49,7 @@ function App() {
                 <Route path="/cupboards/allotment" element={protect(<CupboardAllotment />)} />
                 <Route path="/student-allocation" element={protect(<StudentAllocation />)} />
                 <Route path="/students" element={protect(<StudentProfiles />)} />
+                <Route path="/payments" element={protect(<PaymentManagement />)} />
             </Routes>
         </div>
     );

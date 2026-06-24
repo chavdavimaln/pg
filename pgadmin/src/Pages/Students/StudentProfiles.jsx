@@ -232,7 +232,7 @@ const StudentProfiles = () => {
                 <div className="bg-white p-6 rounded-xl shadow">
                     <div className="grid md:grid-cols-2 gap-4">
                         <div>
-                            <label className="mb-2 block font-medium">Name *</label>
+                            <label className="text-left mb-2 block font-medium">Name *</label>
                             <input
                                 type="text"
                                 value={formData.name}
@@ -242,7 +242,7 @@ const StudentProfiles = () => {
                             />
                         </div>
                         <div>
-                            <label className="mb-2 block font-medium">Photo</label>
+                            <label className="text-left mb-2 block font-medium">Photo</label>
                             <div className="flex items-center gap-3 rounded-lg border p-3">
                                 {formData.photo ? (
                                     <img
@@ -264,7 +264,7 @@ const StudentProfiles = () => {
                             </div>
                         </div>
                         <div>
-                            <label className="mb-2 block font-medium">Mobile *</label>
+                            <label className="text-left mb-2 block font-medium">Mobile *</label>
                             <input
                                 type="text"
                                 value={formData.phone}
@@ -274,7 +274,7 @@ const StudentProfiles = () => {
                             />
                         </div>
                         <div>
-                            <label className="mb-2 block font-medium">Email *</label>
+                            <label className="text-left mb-2 block font-medium">Email *</label>
                             <input
                                 type="email"
                                 value={formData.email}
@@ -284,7 +284,7 @@ const StudentProfiles = () => {
                             />
                         </div>
                         <div>
-                            <label className="mb-2 block font-medium">Emergency Contact</label>
+                            <label className="text-left mb-2 block font-medium">Emergency Contact</label>
                             <input
                                 type="text"
                                 value={formData.emergencyContact}
@@ -293,7 +293,7 @@ const StudentProfiles = () => {
                             />
                         </div>
                         <div>
-                            <label className="mb-2 block font-medium">ID Proof *</label>
+                            <label className="text-left mb-2 block font-medium">ID Proof *</label>
                             <select
                                 value={formData.idProofType}
                                 onChange={(e) =>
@@ -316,7 +316,7 @@ const StudentProfiles = () => {
                         </div>
                         {formData.idProofType && (
                             <div>
-                                <label className="mb-2 block font-medium">{formData.idProofType} Number *</label>
+                                <label className="text-left mb-2 block font-medium">{formData.idProofType} Number *</label>
                                 <input
                                     type="text"
                                     value={formData.idProofNumber}
@@ -327,7 +327,7 @@ const StudentProfiles = () => {
                             </div>
                         )}
                         <div>
-                            <label className="mb-2 block font-medium">Joining Date</label>
+                            <label className="text-left mb-2 block font-medium">Joining Date</label>
                             <input
                                 type="date"
                                 value={formData.joiningDate}
@@ -336,7 +336,7 @@ const StudentProfiles = () => {
                             />
                         </div>
                         <div className="md:col-span-2">
-                            <label className="mb-2 block font-medium">Address</label>
+                            <label className="text-left mb-2 block font-medium">Address</label>
                             <textarea
                                 value={formData.address}
                                 onChange={(e) => setField("address", e.target.value)}
@@ -344,7 +344,7 @@ const StudentProfiles = () => {
                             />
                         </div>
                         <div className="md:col-span-2">
-                            <label className="mb-2 block font-medium">Notes</label>
+                            <label className="text-left mb-2 block font-medium">Notes</label>
                             <textarea
                                 value={formData.notes}
                                 onChange={(e) => setField("notes", e.target.value)}

@@ -13,6 +13,7 @@ export const privilegeOptions = [
     { key: "profiles", label: "Profiles" },
     { key: "allocation", label: "Student Allocation" },
     { key: "allotments", label: "Allotment Reports" },
+    { key: "payments", label: "Payment Management" },
     { key: "adminProfile", label: "Admin Profile" },
     { key: "adminUsers", label: "Admin Users" },
 ];
@@ -73,6 +74,7 @@ export const isSuperAdmin = (admin = getCurrentAdmin()) => admin?.role === admin
 export const hasPrivilege = (admin, privilege) => {
     if (!admin) return false;
     if (admin.role === adminRoles.SUPER) return true;
+    if (privilege === "payments" && admin.role === adminRoles.SINGLE) return true;
     if (privilege === "adminUsers") return false;
     return (admin.privileges || []).includes(privilege);
 };
@@ -83,6 +85,7 @@ export const getRoutePrivilege = (path = "") => {
     if (path.startsWith("/students")) return "profiles";
     if (path.startsWith("/student-allocation")) return "allocation";
     if (path.startsWith("/tables") || path.startsWith("/cupboards")) return "allotments";
+    if (path.startsWith("/payments")) return "payments";
     if (path.startsWith("/admin/users") || path.startsWith("/admin/passwords")) return "adminUsers";
     if (path.startsWith("/admin/profile")) return "adminProfile";
     return "dashboard";
