@@ -231,103 +231,126 @@ const StudentProfiles = () => {
 
                 <div className="bg-white p-6 rounded-xl shadow">
                     <div className="grid md:grid-cols-2 gap-4">
-                        <input
-                            type="text"
-                            placeholder="Name *"
-                            value={formData.name}
-                            onChange={(e) => setField("name", e.target.value)}
-                            className="border p-3 rounded-lg"
-                            required
-                        />
-                        <div className="flex items-center gap-3 rounded-lg border p-3">
-                            {formData.photo ? (
-                                <img
-                                    src={formData.photo}
-                                    alt="Profile preview"
-                                    className="h-12 w-12 rounded object-cover"
-                                />
-                            ) : (
-                                <div className="flex h-12 w-12 items-center justify-center rounded bg-gray-100 text-xs text-gray-500">
-                                    Photo
-                                </div>
-                            )}
-                            <input
-                                type="file"
-                                accept="image/*"
-                                onChange={handlePhotoChange}
-                                className="min-w-0 flex-1 text-sm"
-                            />
-                        </div>
-                        <input
-                            type="text"
-                            placeholder="Mobile *"
-                            value={formData.phone}
-                            onChange={(e) => setField("phone", e.target.value)}
-                            className="border p-3 rounded-lg"
-                            required
-                        />
-                        <input
-                            type="email"
-                            placeholder="Email *"
-                            value={formData.email}
-                            onChange={(e) => setField("email", e.target.value)}
-                            className="border p-3 rounded-lg"
-                            required
-                        />
-                        <input
-                            type="text"
-                            placeholder="Emergency Contact"
-                            value={formData.emergencyContact}
-                            onChange={(e) => setField("emergencyContact", e.target.value)}
-                            className="border p-3 rounded-lg"
-                        />
-                        <select
-                            value={formData.idProofType}
-                            onChange={(e) =>
-                                setFormData((prev) => ({
-                                    ...prev,
-                                    idProofType: e.target.value,
-                                    idProofNumber: "",
-                                }))
-                            }
-                            className="border p-3 rounded-lg"
-                            required
-                        >
-                            <option value="">Select ID Proof *</option>
-                            {idProofOptions.map((option) => (
-                                <option key={option} value={option}>
-                                    {option}
-                                </option>
-                            ))}
-                        </select>
-                        {formData.idProofType && (
+                        <div>
+                            <label className="mb-2 block font-medium">Name *</label>
                             <input
                                 type="text"
-                                placeholder={`${formData.idProofType} Number *`}
-                                value={formData.idProofNumber}
-                                onChange={(e) => setField("idProofNumber", e.target.value)}
-                                className="border p-3 rounded-lg"
+                                value={formData.name}
+                                onChange={(e) => setField("name", e.target.value)}
+                                className="w-full border p-3 rounded-lg"
                                 required
                             />
+                        </div>
+                        <div>
+                            <label className="mb-2 block font-medium">Photo</label>
+                            <div className="flex items-center gap-3 rounded-lg border p-3">
+                                {formData.photo ? (
+                                    <img
+                                        src={formData.photo}
+                                        alt="Profile preview"
+                                        className="h-12 w-12 rounded object-cover"
+                                    />
+                                ) : (
+                                    <div className="flex h-12 w-12 items-center justify-center rounded bg-gray-100 text-xs text-gray-500">
+                                        Photo
+                                    </div>
+                                )}
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handlePhotoChange}
+                                    className="min-w-0 flex-1 text-sm"
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="mb-2 block font-medium">Mobile *</label>
+                            <input
+                                type="text"
+                                value={formData.phone}
+                                onChange={(e) => setField("phone", e.target.value)}
+                                className="w-full border p-3 rounded-lg"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="mb-2 block font-medium">Email *</label>
+                            <input
+                                type="email"
+                                value={formData.email}
+                                onChange={(e) => setField("email", e.target.value)}
+                                className="w-full border p-3 rounded-lg"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="mb-2 block font-medium">Emergency Contact</label>
+                            <input
+                                type="text"
+                                value={formData.emergencyContact}
+                                onChange={(e) => setField("emergencyContact", e.target.value)}
+                                className="w-full border p-3 rounded-lg"
+                            />
+                        </div>
+                        <div>
+                            <label className="mb-2 block font-medium">ID Proof *</label>
+                            <select
+                                value={formData.idProofType}
+                                onChange={(e) =>
+                                    setFormData((prev) => ({
+                                        ...prev,
+                                        idProofType: e.target.value,
+                                        idProofNumber: "",
+                                    }))
+                                }
+                                className="w-full border p-3 rounded-lg"
+                                required
+                            >
+                                <option value="">Select ID Proof</option>
+                                {idProofOptions.map((option) => (
+                                    <option key={option} value={option}>
+                                        {option}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        {formData.idProofType && (
+                            <div>
+                                <label className="mb-2 block font-medium">{formData.idProofType} Number *</label>
+                                <input
+                                    type="text"
+                                    value={formData.idProofNumber}
+                                    onChange={(e) => setField("idProofNumber", e.target.value)}
+                                    className="w-full border p-3 rounded-lg"
+                                    required
+                                />
+                            </div>
                         )}
-                        <input
-                            type="date"
-                            value={formData.joiningDate}
-                            onChange={(e) => setField("joiningDate", e.target.value)}
-                            className="border p-3 rounded-lg"
-                        />
-                        <textarea
-                            placeholder="Address"
-                            value={formData.address}
-                            onChange={(e) => setField("address", e.target.value)}
-                            className="border p-3 rounded-lg md:col-span-2"
-                        />
-                        <textarea
-                            placeholder="Notes"
-                            value={formData.notes}
-                            onChange={(e) => setField("notes", e.target.value)}
-                            className="border p-3 rounded-lg md:col-span-2"
-                        />
+                        <div>
+                            <label className="mb-2 block font-medium">Joining Date</label>
+                            <input
+                                type="date"
+                                value={formData.joiningDate}
+                                onChange={(e) => setField("joiningDate", e.target.value)}
+                                className="w-full border p-3 rounded-lg"
+                            />
+                        </div>
+                        <div className="md:col-span-2">
+                            <label className="mb-2 block font-medium">Address</label>
+                            <textarea
+                                value={formData.address}
+                                onChange={(e) => setField("address", e.target.value)}
+                                className="w-full border p-3 rounded-lg"
+                            />
+                        </div>
+                        <div className="md:col-span-2">
+                            <label className="mb-2 block font-medium">Notes</label>
+                            <textarea
+                                value={formData.notes}
+                                onChange={(e) => setField("notes", e.target.value)}
+                                className="w-full border p-3 rounded-lg"
+                            />
+                        </div>
                     </div>
 
                     <div className="mt-5 flex gap-3">

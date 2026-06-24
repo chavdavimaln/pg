@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, BedDouble, User, X, ChevronDown, ChevronRight } from "lucide-react";
+import { LayoutDashboard, BedDouble, User, X, ChevronDown, ChevronRight, Shield } from "lucide-react";
+import { getCurrentAdmin, hasPrivilege, isSuperAdmin } from "../../Utils/adminAuth";
 
 const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
     const location = useLocation();
+    const currentAdmin = getCurrentAdmin();
 
     const [roomMenuOpen, setRoomMenuOpen] = useState(
         location.pathname.startsWith("/rooms")
@@ -13,19 +15,28 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         {
             name: "Dashboard",
             icon: <LayoutDashboard size={20} />,
-            path: "/"
+            path: "/",
+            privilege: "dashboard",
         },
         {
             name: "Profiles",
             icon: <User size={20} />,
-            path: "/students"
+            path: "/students",
+            privilege: "profiles",
         },
         {
             name: "Student Allocation",
             icon: <User size={20} />,
             path: "/student-allocation",
+            privilege: "allocation",
+        },
+        {
+            name: "Admin Profile",
+            icon: <Shield size={20} />,
+            path: "/admin/profile",
+            privilege: "adminProfile",
         }
-    ];
+    ].filter((item) => hasPrivilege(currentAdmin, item.privilege));
 
     return (
         <>
@@ -56,6 +67,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                         ))}
 
                         {/* Rooms Menu */}
+                        {hasPrivilege(currentAdmin, "rooms") && (
                         <li>
                             <button onClick={() => setRoomMenuOpen(!roomMenuOpen)} className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition ${location.pathname.startsWith("/rooms") ? "bg-gray-800 text-white" : "hover:bg-gray-800"}`} >
                                 <div className="flex items-center gap-3">
@@ -95,6 +107,33 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                                 </ul>
                             )}
                         </li>
+                        )}
+
+                        {isSuperAdmin(currentAdmin) && (
+                            <li>
+                                <Link to="/admin/users" className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${location.pathname === "/admin/users" ? "bg-gray-800 text-white" : "hover:bg-gray-800"}`} >
+                                    <Shield size={20} />
+                                    <span>Admin Users</span>
+                                </Link>
+                            </li>
+                        )}
+
+                        {hasPrivilege(currentAdmin, "allotments") && (
+                            <>
+                                <li>
+                                    <Link to="/tables/allotment" className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${location.pathname === "/tables/allotment" ? "bg-gray-800 text-white" : "hover:bg-gray-800"}`} >
+                                        <BedDouble size={20} />
+                                        <span>Table Allotment</span>
+                                    </Link>
+                                </li>
+                                <li>
+                                    <Link to="/cupboards/allotment" className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${location.pathname === "/cupboards/allotment" ? "bg-gray-800 text-white" : "hover:bg-gray-800"}`} >
+                                        <BedDouble size={20} />
+                                        <span>Cupboard Allotment</span>
+                                    </Link>
+                                </li>
+                            </>
+                        )}
                     </ul>
                 </nav>
             </aside>
