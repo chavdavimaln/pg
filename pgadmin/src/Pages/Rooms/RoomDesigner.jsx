@@ -46,6 +46,7 @@ const RoomDesigner = () => {
     const [canvasHeight, setCanvasHeight] = useState(400);
     const [allocations, setAllocations] = useState([]);
     const [students, setStudents] = useState([]);
+    const [roomStatus, setRoomStatus] = useState("Available");
 
     // setDoors(room.doors || []);
 
@@ -59,6 +60,7 @@ const RoomDesigner = () => {
         setDoors(normalizeRoomItems(room.doors || [], "door"));
         setCanvasWidth(room.canvasWidth || 600);
         setCanvasHeight(room.canvasHeight || 400);
+        setRoomStatus(room.status === "Under Maintenance" ? "Under Maintenance" : "Available");
         setAllocations(getStoredAllocations());
         setStudents(getStoredStudents());
     }, [id]);
@@ -332,6 +334,7 @@ const RoomDesigner = () => {
                     roomType: getRoomType(beds.length),
                     canvasWidth,
                     canvasHeight,
+                    status: roomStatus,
                     beds,
                     tables,
                     cupboards,
@@ -492,6 +495,7 @@ const RoomDesigner = () => {
                       ...allocation,
                       studentId: student.id,
                       studentName: student.name,
+                      photo: student.photo || "",
                       phone: student.phone || "",
                       email: student.email || "",
                   }
@@ -588,6 +592,14 @@ const RoomDesigner = () => {
                             readOnly
                             className="border rounded-lg p-3 bg-gray-100"
                         />
+                        <select
+                            value={roomStatus}
+                            onChange={(e) => setRoomStatus(e.target.value)}
+                            className="border rounded-lg p-3"
+                        >
+                            <option value="Available">Available</option>
+                            <option value="Under Maintenance">Under Maintenance</option>
+                        </select>
                     </div>
                 </div>
                 <div className="bg-white rounded-xl shadow p-5 canvas-size-input">

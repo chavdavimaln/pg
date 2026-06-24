@@ -44,6 +44,23 @@ export const isOccupied = (type, itemId, roomId) => {
 export const isRoomOccupied = (roomId, allocations = getStoredAllocations()) =>
     allocations.some((allocation) => String(allocation.roomId) === String(roomId));
 
+export const isRoomUnderMaintenance = (room) =>
+    String(room?.status || "").toLowerCase() === "under maintenance";
+
+export const getRoomStatus = (room, allocations = getStoredAllocations()) => {
+    if (isRoomUnderMaintenance(room)) return "Under Maintenance";
+
+    const totalBeds = room?.beds?.length || Number(room?.bedCount) || 0;
+    const occupiedBeds = allocations.filter(
+        (allocation) => String(allocation.roomId) === String(room?.id) && allocation.bedId,
+    ).length;
+
+    if (occupiedBeds === 0) return "Available";
+    if (totalBeds > 0 && occupiedBeds >= totalBeds) return "Occupied";
+
+    return "Partially Occupied";
+};
+
 export const getVacantBedsForRoom = (room, allocations = getStoredAllocations()) => {
     const occupiedBedIds = allocations
         .filter((allocation) => String(allocation.roomId) === String(room.id))

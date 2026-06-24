@@ -6,7 +6,7 @@ import AdminLayout from "../../Components/Layout/AdminLayout";
 import {
     getStoredAllocations,
     getStoredRooms,
-    isRoomOccupied,
+    getRoomStatus,
     saveStoredAllocations,
     saveStoredRooms,
 } from "../../Utils/allocationHelper";
@@ -17,7 +17,7 @@ const buildRoomView = (room, allocations) => {
     // The card needs display-ready lists, while the saved room keeps only layout data.
     return {
         ...room,
-        status: isRoomOccupied(room.id, allocations) ? "Occupied" : "Available",
+        status: getRoomStatus(room, allocations),
         allocationCount: roomAllocations.length,
         occupiedBeds: roomAllocations.map((allocation) => allocation.bedLabel || allocation.bedId),
         occupiedTables: roomAllocations

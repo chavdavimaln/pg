@@ -9,6 +9,7 @@ import {
     getStoredAllocations,
     getStoredRooms,
     getVacantBedsForRoom,
+    isRoomUnderMaintenance,
     isOccupied,
 } from "../../Utils/allocationHelper";
 
@@ -17,6 +18,7 @@ const VacantRooms = () => {
     const allocations = getStoredAllocations();
 
     const vacantRooms = rooms
+        .filter((room) => !isRoomUnderMaintenance(room))
         .map((room) => {
             const vacantBeds = getVacantBedsForRoom(room, allocations);
             const vacantTables = (room.tables || []).filter((table) => !isOccupied("table", table.id, room.id));

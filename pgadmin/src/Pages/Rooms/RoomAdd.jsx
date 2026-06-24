@@ -24,6 +24,7 @@ const RoomAdd = () => {
         bedCount: 1,
         canvasWidth: 600,
         canvasHeight: 400,
+        status: "Available",
     });
 
     const [beds, setBeds] = useState([]);
@@ -58,7 +59,7 @@ const RoomAdd = () => {
             bedCount: roomData.bedCount,
             canvasWidth: roomData.canvasWidth,
             canvasHeight: roomData.canvasHeight,
-            status: "Available",
+            status: roomData.status,
             beds,
             tables,
             cupboards,
@@ -74,6 +75,7 @@ const RoomAdd = () => {
             bedCount: 1,
             canvasWidth: 600,
             canvasHeight: 400,
+            status: "Available",
         });
         setBeds([]);
         setTables([]);
@@ -201,6 +203,14 @@ const RoomAdd = () => {
                             placeholder="Canvas Height"
                             className="border p-3 rounded-lg"
                         />
+                        <select
+                            value={roomData.status}
+                            onChange={(e) => setRoomData({ ...roomData, status: e.target.value })}
+                            className="border p-3 rounded-lg"
+                        >
+                            <option value="Available">Available</option>
+                            <option value="Under Maintenance">Under Maintenance</option>
+                        </select>
                     </div>
                     <div className="mt-5 flex gap-3">
                         <button onClick={generateLayout} className="bg-blue-600 text-white px-5 py-3 rounded-lg">

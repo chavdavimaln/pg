@@ -8,12 +8,15 @@ import {
     getStoredRooms,
     getStoredStudents,
     isOccupied,
+    isRoomUnderMaintenance,
     saveStoredAllocations,
+    saveStoredRooms,
 } from "../../Utils/allocationHelper";
 
 const emptyForm = {
     studentId: "",
     studentName: "",
+    photo: "",
     phone: "",
     email: "",
     roomId: "",
@@ -29,6 +32,7 @@ const StudentAllocation = () => {
     const [students, setStudents] = useState([]);
     const [formData, setFormData] = useState(emptyForm);
     const [editingId, setEditingId] = useState(null);
+    const [bedOnlyModal, setBedOnlyModal] = useState(null);
 
     const selectedRoom = useMemo(
         () => rooms.find((room) => String(room.id) === String(formData.roomId)) || null,
@@ -52,6 +56,7 @@ const StudentAllocation = () => {
                 setFormData({
                     studentId: allocation.studentId || "",
                     studentName: allocation.studentName || "",
+                    photo: allocation.photo || "",
                     phone: allocation.phone || "",
                     email: allocation.email || "",
                     roomId: allocation.roomId || "",
@@ -89,6 +94,7 @@ const StudentAllocation = () => {
             ...formData,
             studentId,
             studentName: student?.name || "",
+            photo: student?.photo || "",
             phone: student?.phone || "",
             email: student?.email || "",
         });
@@ -111,13 +117,39 @@ const StudentAllocation = () => {
     const isItemUnavailable = (type, itemId) =>
         selectedRoom && isOccupied(type, itemId, selectedRoom.id) && !isCurrentAllocationItem(type, itemId);
 
+    const currentAllocation = useMemo(
+        () => allocations.find((item) => String(item.id) === String(editingId)) || null,
+        [allocations, editingId],
+    );
+
     const resetForm = () => {
         setFormData(emptyForm);
         setEditingId(null);
         setSearchParams({});
     };
 
-    const saveAllocation = () => {
+    const isKeepingSameMaintenanceAllocation = () => {
+        if (!currentAllocation) return false;
+
+        return (
+            String(currentAllocation.studentId) === String(formData.studentId) &&
+            String(currentAllocation.roomId) === String(formData.roomId) &&
+            String(currentAllocation.bedId) === String(formData.bedId) &&
+            String(currentAllocation.tableId) === String(formData.tableId) &&
+            String(currentAllocation.cupboardId) === String(formData.cupboardId)
+        );
+    };
+
+    const makeRoomAvailable = (roomId) => {
+        const updatedRooms = rooms.map((item) =>
+            String(item.id) === String(roomId) ? { ...item, status: "Available" } : item,
+        );
+
+        saveStoredRooms(updatedRooms);
+        setRooms(updatedRooms);
+    };
+
+    const saveAllocation = (allowBedOnly = false) => {
         if (!formData.studentId) {
             alert("Please select a saved student/person profile first");
             return;
@@ -140,6 +172,32 @@ const StudentAllocation = () => {
             return;
         }
 
+        const totalBeds = room.beds?.length || Number(room.bedCount) || 0;
+        const usedBedsInRoom = allocations.filter(
+            (allocation) =>
+                String(allocation.roomId) === String(room.id) &&
+                String(allocation.id) !== String(editingId) &&
+                allocation.bedId,
+        ).length;
+
+        if (totalBeds > 0 && usedBedsInRoom >= totalBeds) {
+            alert("This room has no vacant bed available for another person");
+            return;
+        }
+
+        if (isRoomUnderMaintenance(room) && !isKeepingSameMaintenanceAllocation()) {
+            const allowStatusChange = window.confirm(
+                "This room is under maintenance. Existing allotted members can remain, but a new or changed allotment is not allowed while the room is under maintenance.\n\nDo you want to change this room status to Available and continue?",
+            );
+
+            if (!allowStatusChange) {
+                alert("Allotment cancelled. Keep the existing member or change the room status to Available first.");
+                return;
+            }
+
+            makeRoomAvailable(room.id);
+        }
+
         if (isItemUnavailable("bed", formData.bedId)) {
             alert("Selected bed already occupied");
             return;
@@ -155,6 +213,21 @@ const StudentAllocation = () => {
             return;
         }
 
+        const missingItems = [
+            !formData.tableId ? "table" : "",
+            !formData.cupboardId ? "cupboard" : "",
+        ].filter(Boolean);
+
+        if (missingItems.length && !allowBedOnly) {
+            setBedOnlyModal({
+                roomId: room.id,
+                roomNumber: room.roomNumber,
+                bedLabel: room.beds?.find((item) => String(item.id) === String(formData.bedId))?.label || "selected bed",
+                missingItems,
+            });
+            return;
+        }
+
         const bed = room.beds?.find((item) => String(item.id) === String(formData.bedId));
         const table = room.tables?.find((item) => String(item.id) === String(formData.tableId));
         const cupboard = room.cupboards?.find((item) => String(item.id) === String(formData.cupboardId));
@@ -163,6 +236,7 @@ const StudentAllocation = () => {
             id: editingId || Date.now(),
             studentId: student.id,
             studentName: student.name,
+            photo: student.photo || "",
             phone: student.phone || "",
             email: student.email || "",
             roomId: room.id,
@@ -190,11 +264,17 @@ const StudentAllocation = () => {
         alert(editingId ? "Allocation Updated Successfully" : "Student Allocated Successfully");
     };
 
+    const continueBedOnlyAllocation = () => {
+        setBedOnlyModal(null);
+        saveAllocation(true);
+    };
+
     const editAllocation = (allocation) => {
         setEditingId(allocation.id);
         setFormData({
             studentId: allocation.studentId || "",
             studentName: allocation.studentName || "",
+            photo: allocation.photo || "",
             phone: allocation.phone || "",
             email: allocation.email || "",
             roomId: allocation.roomId || "",
@@ -216,6 +296,17 @@ const StudentAllocation = () => {
 
     const allocationColumns = [
         { key: "studentName", header: "Student", accessor: "studentName" },
+        {
+            key: "photo",
+            header: "Photo",
+            sortValue: (item) => item.studentName || "",
+            render: (item) =>
+                item.photo ? (
+                    <img src={item.photo} alt={item.studentName || "Profile"} className="h-10 w-10 rounded object-cover" />
+                ) : (
+                    "-"
+                ),
+        },
         { key: "roomNumber", header: "Room", accessor: "roomNumber" },
         { key: "bed", header: "Bed", sortValue: (item) => item.bedLabel || item.bedId, render: (item) => item.bedLabel || item.bedId },
         { key: "table", header: "Table", sortValue: (item) => item.tableLabel || "-", render: (item) => item.tableLabel || "-" },
@@ -299,10 +390,24 @@ const StudentAllocation = () => {
                             readOnly
                             className="border p-3 rounded-lg bg-gray-100"
                         />
+                        <div className="flex items-center gap-3 rounded-lg border bg-gray-100 p-3">
+                            {formData.photo ? (
+                                <img
+                                    src={formData.photo}
+                                    alt="Selected profile"
+                                    className="h-12 w-12 rounded object-cover"
+                                />
+                            ) : (
+                                <div className="flex h-12 w-12 items-center justify-center rounded bg-white text-xs text-gray-500">
+                                    Photo
+                                </div>
+                            )}
+                            <span className="text-sm text-gray-600">Profile photo</span>
+                        </div>
 
                         <input
                             type="text"
-                            placeholder="Phone"
+                            placeholder="Mobile"
                             value={formData.phone}
                             readOnly
                             className="border p-3 rounded-lg bg-gray-100"
@@ -325,6 +430,7 @@ const StudentAllocation = () => {
                             {rooms.map((room) => (
                                 <option key={room.id} value={room.id}>
                                     {room.roomNumber} - {room.roomType}
+                                    {isRoomUnderMaintenance(room) ? " (Under Maintenance)" : ""}
                                 </option>
                             ))}
                         </select>
@@ -353,7 +459,7 @@ const StudentAllocation = () => {
                                     onChange={(e) => setFormData({ ...formData, tableId: e.target.value })}
                                     className="border p-3 rounded-lg"
                                 >
-                                    <option value="">Select Table</option>
+                                    <option value="">Select Table (Optional)</option>
                                     {selectedRoom.tables?.map((table) => {
                                         const unavailable = isItemUnavailable("table", table.id);
                                         return (
@@ -370,7 +476,7 @@ const StudentAllocation = () => {
                                     onChange={(e) => setFormData({ ...formData, cupboardId: e.target.value })}
                                     className="border p-3 rounded-lg"
                                 >
-                                    <option value="">Select Cupboard</option>
+                                    <option value="">Select Cupboard (Optional)</option>
                                     {selectedRoom.cupboards?.map((cupboard) => {
                                         const unavailable = isItemUnavailable("cupboard", cupboard.id);
                                         return (
@@ -388,7 +494,7 @@ const StudentAllocation = () => {
                     <div className="mt-5 flex gap-3">
                         <button
                             type="button"
-                            onClick={saveAllocation}
+                            onClick={() => saveAllocation()}
                             className="flex h-11 w-11 items-center justify-center rounded-lg bg-green-600 text-white"
                             title={editingId ? "Update allocation" : "Allocate student"}
                             aria-label={editingId ? "Update allocation" : "Allocate student"}
@@ -418,6 +524,47 @@ const StudentAllocation = () => {
                         searchPlaceholder="Search allocations..."
                     />
                 </div>
+
+                {bedOnlyModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                        <div className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl">
+                            <h3 className="text-xl font-bold">Assign Bed Only?</h3>
+                            <div className="mt-3 space-y-2 text-sm text-gray-700">
+                                <p>
+                                    Room {bedOnlyModal.roomNumber} has {bedOnlyModal.bedLabel} selected, but no{" "}
+                                    {bedOnlyModal.missingItems.join(" or ")} is selected for this person.
+                                </p>
+                                <p>
+                                    You can add more room furniture from the room designer, or continue with bed
+                                    occupation only. The room will still become partially occupied or occupied based on
+                                    bed count.
+                                </p>
+                            </div>
+                            <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-end">
+                                <button
+                                    type="button"
+                                    onClick={() => setBedOnlyModal(null)}
+                                    className="rounded-lg border px-4 py-2 text-gray-700"
+                                >
+                                    Cancel
+                                </button>
+                                <Link
+                                    to={`/rooms/designer/${bedOnlyModal.roomId}`}
+                                    className="rounded-lg bg-indigo-600 px-4 py-2 text-center text-white"
+                                >
+                                    Add Table / Cupboard
+                                </Link>
+                                <button
+                                    type="button"
+                                    onClick={continueBedOnlyAllocation}
+                                    className="rounded-lg bg-green-600 px-4 py-2 text-white"
+                                >
+                                    Continue Bed Only
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </AdminLayout>
     );

@@ -5,6 +5,12 @@ import { Eye, Trash2 } from "lucide-react";
 
 const RoomCard = ({ room, onDelete }) => {
     const listItems = (items) => (items.length ? items.join(", ") : "-");
+    const statusClass = {
+        Occupied: "text-red-600",
+        "Partially Occupied": "text-amber-600",
+        "Under Maintenance": "text-slate-600",
+        Available: "text-green-600",
+    }[room.status] || "text-green-600";
 
     return (
         <div className="room-card flex h-full flex-col rounded-lg bg-white p-5 text-left shadow">
@@ -16,9 +22,7 @@ const RoomCard = ({ room, onDelete }) => {
                 <p className="break-words">Occupied Tables: {listItems(room.occupiedTables || [])}</p>
                 <p className="break-words">Occupied Cupboards: {listItems(room.occupiedCupboards || [])}</p>
             </div>
-            <p className={`mt-3 font-medium ${room.status === "Occupied" ? "text-red-600" : "text-green-600"}`}>
-                {room.status}
-            </p>
+            <p className={`mt-3 font-medium ${statusClass}`}>{room.status}</p>
             <div className="mt-4 flex flex-wrap gap-2">
                 <Link
                     to={`/rooms/designer/${room.id}`}

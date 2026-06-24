@@ -9,13 +9,23 @@ import {
     saveStoredStudents,
 } from "../../Utils/allocationHelper";
 
+const idProofOptions = [
+    "Aadhar Card",
+    "PAN Card",
+    "Driving Licence",
+    "Election Card",
+    "Passport",
+];
+
 const emptyStudent = {
     name: "",
+    photo: "",
     phone: "",
     email: "",
-    guardianName: "",
     address: "",
-    idProof: "",
+    emergencyContact: "",
+    idProofType: "",
+    idProofNumber: "",
     joiningDate: "",
     notes: "",
 };
@@ -35,9 +45,56 @@ const StudentProfiles = () => {
         setEditingId(null);
     };
 
+    const setField = (field, value) => {
+        setFormData((prev) => ({ ...prev, [field]: value }));
+    };
+
+    const handlePhotoChange = (event) => {
+        const file = event.target.files?.[0];
+        if (!file) {
+            setField("photo", "");
+            return;
+        }
+
+        if (!file.type.startsWith("image/")) {
+            alert("Please select a valid photo image");
+            event.target.value = "";
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => setField("photo", reader.result || "");
+        reader.readAsDataURL(file);
+    };
+
     const saveStudent = () => {
         if (!formData.name.trim()) {
             alert("Please enter student or person name");
+            return;
+        }
+
+        if (!formData.phone.trim()) {
+            alert("Please enter mobile number");
+            return;
+        }
+
+        if (!formData.email.trim()) {
+            alert("Please enter email");
+            return;
+        }
+
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+            alert("Please enter a valid email");
+            return;
+        }
+
+        if (!formData.idProofType) {
+            alert("Please select ID proof");
+            return;
+        }
+
+        if (!formData.idProofNumber.trim()) {
+            alert("Please enter ID proof number");
             return;
         }
 
@@ -45,6 +102,11 @@ const StudentProfiles = () => {
             id: editingId || Date.now(),
             ...formData,
             name: formData.name.trim(),
+            phone: formData.phone.trim(),
+            email: formData.email.trim(),
+            idProofType: formData.idProofType,
+            idProofNumber: formData.idProofNumber.trim(),
+            idProof: `${formData.idProofType} - ${formData.idProofNumber.trim()}`,
         };
 
         const updatedStudents = editingId
@@ -59,6 +121,7 @@ const StudentProfiles = () => {
                           studentName: student.name,
                           phone: student.phone || "",
                           email: student.email || "",
+                          photo: student.photo || "",
                       }
                     : allocation,
             );
@@ -74,11 +137,13 @@ const StudentProfiles = () => {
         setEditingId(student.id);
         setFormData({
             name: student.name || "",
+            photo: student.photo || "",
             phone: student.phone || "",
             email: student.email || "",
-            guardianName: student.guardianName || "",
             address: student.address || "",
-            idProof: student.idProof || "",
+            emergencyContact: student.emergencyContact || student.guardianName || "",
+            idProofType: student.idProofType || "",
+            idProofNumber: student.idProofNumber || student.idProof || "",
             joiningDate: student.joiningDate || "",
             notes: student.notes || "",
         });
@@ -99,20 +164,35 @@ const StudentProfiles = () => {
     };
 
     const profileColumns = [
+        {
+            key: "photo",
+            header: "Photo",
+            sortValue: (student) => student.name || "",
+            render: (student) =>
+                student.photo ? (
+                    <img
+                        src={student.photo}
+                        alt={student.name || "Profile"}
+                        className="h-10 w-10 rounded object-cover"
+                    />
+                ) : (
+                    "-"
+                ),
+        },
         { key: "name", header: "Name", accessor: "name" },
-        { key: "phone", header: "Phone", sortValue: (student) => student.phone || "-", render: (student) => student.phone || "-" },
+        { key: "phone", header: "Mobile", sortValue: (student) => student.phone || "-", render: (student) => student.phone || "-" },
         { key: "email", header: "Email", sortValue: (student) => student.email || "-", render: (student) => student.email || "-" },
         {
-            key: "guardianName",
-            header: "Guardian",
-            sortValue: (student) => student.guardianName || "-",
-            render: (student) => student.guardianName || "-",
+            key: "emergencyContact",
+            header: "Emergency",
+            sortValue: (student) => student.emergencyContact || student.guardianName || "-",
+            render: (student) => student.emergencyContact || student.guardianName || "-",
         },
         {
             key: "idProof",
             header: "ID Proof",
-            sortValue: (student) => student.idProof || "-",
-            render: (student) => student.idProof || "-",
+            sortValue: (student) => student.idProof || student.idProofNumber || "-",
+            render: (student) => student.idProof || student.idProofNumber || "-",
         },
         {
             key: "action",
@@ -153,55 +233,99 @@ const StudentProfiles = () => {
                     <div className="grid md:grid-cols-2 gap-4">
                         <input
                             type="text"
-                            placeholder="Name"
+                            placeholder="Name *"
                             value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            onChange={(e) => setField("name", e.target.value)}
                             className="border p-3 rounded-lg"
+                            required
                         />
+                        <div className="flex items-center gap-3 rounded-lg border p-3">
+                            {formData.photo ? (
+                                <img
+                                    src={formData.photo}
+                                    alt="Profile preview"
+                                    className="h-12 w-12 rounded object-cover"
+                                />
+                            ) : (
+                                <div className="flex h-12 w-12 items-center justify-center rounded bg-gray-100 text-xs text-gray-500">
+                                    Photo
+                                </div>
+                            )}
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handlePhotoChange}
+                                className="min-w-0 flex-1 text-sm"
+                            />
+                        </div>
                         <input
                             type="text"
-                            placeholder="Phone"
+                            placeholder="Mobile *"
                             value={formData.phone}
-                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                            onChange={(e) => setField("phone", e.target.value)}
                             className="border p-3 rounded-lg"
+                            required
                         />
                         <input
                             type="email"
-                            placeholder="Email"
+                            placeholder="Email *"
                             value={formData.email}
-                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                            onChange={(e) => setField("email", e.target.value)}
                             className="border p-3 rounded-lg"
+                            required
                         />
                         <input
                             type="text"
-                            placeholder="Guardian Name"
-                            value={formData.guardianName}
-                            onChange={(e) => setFormData({ ...formData, guardianName: e.target.value })}
+                            placeholder="Emergency Contact"
+                            value={formData.emergencyContact}
+                            onChange={(e) => setField("emergencyContact", e.target.value)}
                             className="border p-3 rounded-lg"
                         />
-                        <input
-                            type="text"
-                            placeholder="ID Proof"
-                            value={formData.idProof}
-                            onChange={(e) => setFormData({ ...formData, idProof: e.target.value })}
+                        <select
+                            value={formData.idProofType}
+                            onChange={(e) =>
+                                setFormData((prev) => ({
+                                    ...prev,
+                                    idProofType: e.target.value,
+                                    idProofNumber: "",
+                                }))
+                            }
                             className="border p-3 rounded-lg"
-                        />
+                            required
+                        >
+                            <option value="">Select ID Proof *</option>
+                            {idProofOptions.map((option) => (
+                                <option key={option} value={option}>
+                                    {option}
+                                </option>
+                            ))}
+                        </select>
+                        {formData.idProofType && (
+                            <input
+                                type="text"
+                                placeholder={`${formData.idProofType} Number *`}
+                                value={formData.idProofNumber}
+                                onChange={(e) => setField("idProofNumber", e.target.value)}
+                                className="border p-3 rounded-lg"
+                                required
+                            />
+                        )}
                         <input
                             type="date"
                             value={formData.joiningDate}
-                            onChange={(e) => setFormData({ ...formData, joiningDate: e.target.value })}
+                            onChange={(e) => setField("joiningDate", e.target.value)}
                             className="border p-3 rounded-lg"
                         />
                         <textarea
                             placeholder="Address"
                             value={formData.address}
-                            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                            onChange={(e) => setField("address", e.target.value)}
                             className="border p-3 rounded-lg md:col-span-2"
                         />
                         <textarea
                             placeholder="Notes"
                             value={formData.notes}
-                            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                            onChange={(e) => setField("notes", e.target.value)}
                             className="border p-3 rounded-lg md:col-span-2"
                         />
                     </div>
