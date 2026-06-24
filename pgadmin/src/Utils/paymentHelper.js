@@ -109,28 +109,28 @@ const lineDefinitions = [
         qtyKey: "roomChargeQty",
         label: "Room Allotment Charge",
         allocationType: "room",
-        editableQuantity: true,
+        hideQuantity: true,
     },
     {
         key: "bedCharge",
         qtyKey: "bedChargeQty",
         label: "Bed Allotment Charge",
         allocationType: "bed",
-        editableQuantity: true,
+        hideQuantity: true,
     },
     {
         key: "tableCharge",
         qtyKey: "tableChargeQty",
         label: "Table Allotment Charge",
         allocationType: "table",
-        editableQuantity: true,
+        hideQuantity: true,
     },
     {
         key: "cupboardCharge",
         qtyKey: "cupboardChargeQty",
         label: "Cupboard Allotment Charge",
         allocationType: "cupboard",
-        editableQuantity: true,
+        hideQuantity: true,
     },
     { key: "electricity", qtyKey: "electricityQty", label: "Electricity", fixedQuantity: 1 },
     { key: "waterCharges", qtyKey: "waterChargesQty", label: "Water Charges", editableQuantity: true },
@@ -142,6 +142,7 @@ const getAppliedQuantity = (definition, allocation, fees) => {
     const configuredQty = toAmount(fees[definition.qtyKey]);
 
     if (definition.fixedQuantity) return definition.fixedQuantity;
+    if (definition.hideQuantity) return allocation ? 1 : 0;
     if (definition.allocationType === "room") return allocation ? configuredQty : 0;
     if (definition.allocationType === "bed") return allocation?.bedId ? configuredQty : 0;
     if (definition.allocationType === "table") return allocation?.tableId ? configuredQty : 0;
@@ -170,6 +171,7 @@ export const calculateAllocationCharges = (allocation, feeStructure) => {
             editableQuantity: Boolean(definition.editableQuantity),
             automaticQuantity: Boolean(definition.allocationType),
             fixedQuantity: Boolean(definition.fixedQuantity),
+            hideQuantity: Boolean(definition.hideQuantity),
             deduction: Boolean(definition.deduction),
         };
     });

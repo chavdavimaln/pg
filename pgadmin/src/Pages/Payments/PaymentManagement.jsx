@@ -30,6 +30,9 @@ const emptyPayment = {
 };
 
 const fieldClass = "w-full rounded-lg border p-3";
+const hiddenQuantityChargeKeys = ["roomCharge", "bedCharge", "tableCharge", "cupboardCharge"];
+
+const shouldShowQuantity = (item) => !item.hideQuantity && !hiddenQuantityChargeKeys.includes(item.key);
 
 const getRentBasedCharges = (monthlyRent) => {
     const rent = toAmount(monthlyRent);
@@ -92,7 +95,7 @@ const buildReceiptHtml = (receipt) => `
             ${receipt.items
                 .map(
                     (item) =>
-                        `<tr><td>${item.label}</td><td>${item.quantity}</td><td>${formatCurrency(
+                        `<tr><td>${item.label}</td><td>${shouldShowQuantity(item) ? item.quantity : "-"}</td><td>${formatCurrency(
                             item.rate,
                         )}</td><td>${formatCurrency(item.amount)}</td></tr>`,
                 )
@@ -458,7 +461,9 @@ const PaymentManagement = () => {
                                                 <tr key={item.key}>
                                                     <td className="border p-2 font-medium">{item.label}</td>
                                                     <td className="border p-2">
-                                                        {item.editableQuantity ? (
+                                                        {!shouldShowQuantity(item) ? (
+                                                            <span className="text-gray-400">-</span>
+                                                        ) : item.editableQuantity ? (
                                                             <input
                                                                 type="number"
                                                                 min="0"
@@ -623,7 +628,9 @@ const PaymentManagement = () => {
                                                 <tr key={item.label} className="border-b last:border-b-0">
                                                     <td className="py-2">{item.label}</td>
                                                     <td className="py-2">
-                                                        {readOnlyReceipt ? (
+                                                        {!shouldShowQuantity(item) ? (
+                                                            <span className="text-gray-400">-</span>
+                                                        ) : readOnlyReceipt ? (
                                                             item.quantity
                                                         ) : item.editableQuantity ? (
                                                             <input
