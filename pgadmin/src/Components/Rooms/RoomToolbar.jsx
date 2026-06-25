@@ -17,6 +17,7 @@ const RoomToolbar = ({
     rotateSelectedItem,
     addDoor,
     doorCount,
+    selectedItem,
 }) => {
     const iconButtonClass =
         "flex h-10 w-10 items-center justify-center rounded-lg text-white transition disabled:cursor-not-allowed disabled:bg-gray-400";
@@ -101,6 +102,7 @@ const RoomToolbar = ({
                 <button
                     type="button"
                     onClick={deleteSelectedItem}
+                    disabled={!selectedItem || selectedItem.type === "door"}
                     className={`${iconButtonClass} bg-red-700 hover:bg-red-800`}
                     title="Delete selected item"
                     aria-label="Delete selected item"

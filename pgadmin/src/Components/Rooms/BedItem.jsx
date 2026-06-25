@@ -2,14 +2,20 @@
 import React, { useRef } from "react";
 import Draggable from "react-draggable";
 import { isOccupied } from "../../Utils/allocationHelper";
+import bedReal from "../../Assets/rooms/bed-real.png";
 const BedItem = ({ item, onDrag, selected, onSelect, roomId, scale = 1 }) => {
     const nodeRef = useRef(null);
     const occupied = isOccupied("bed", item.id, roomId);
+    const rotation = item.rotation || 0;
+    const isSideways = Math.abs(rotation) % 180 === 90;
+    const visualWidth = isSideways ? item.height : item.width;
+    const visualHeight = isSideways ? item.width : item.height;
+
     return (
         <Draggable
             nodeRef={nodeRef}
             bounds="parent"
-            grid={[40, 40]}
+            grid={[1, 1]}
             scale={scale}
             position={{ x: item.x, y: item.y }}
             onStop={(e, data) => {
@@ -23,21 +29,35 @@ const BedItem = ({ item, onDrag, selected, onSelect, roomId, scale = 1 }) => {
                 ref={nodeRef}
                 onClick={onSelect}
                 title={occupied ? `${item.label} allocated` : `${item.label} vacant`}
-                className={`absolute text-white text-[11px] rounded-lg flex items-center justify-center cursor-move border-2 
-                    ${occupied
-                        ? "bg-red-700 border-red-950"
-                        : "bg-blue-600 border-blue-800"
-                    }${selected
-                        ? "ring-4 ring-yellow-400"
-                        : ""
-                    }`}
+                className={`absolute cursor-move overflow-visible text-[10px] font-semibold text-indigo-950 ${
+                    selected ? "z-20" : ""
+                }`}
                 style={{
                     width: item.width,
                     height: item.height,
-                    transform: `rotate(${item.rotation || 0}deg)`
                 }}
             >
-                {item.label}
+                <div
+                    className="absolute left-1/2 top-1/2 flex items-center justify-center overflow-hidden rounded-md bg-gray-100"
+                    style={{
+                        width: visualWidth,
+                        height: visualHeight,
+                        transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
+                        boxShadow: selected ? "inset 0 0 0 4px #facc15" : "none",
+                    }}
+                >
+                    <img
+                        src={bedReal}
+                        alt=""
+                        className={`absolute inset-0 h-full w-full object-fill ${
+                            occupied ? "opacity-70" : ""
+                        }`}
+                        draggable="false"
+                    />
+                </div>
+                <span className="absolute bottom-[2px] left-1/2 z-10 max-w-full -translate-x-1/2 truncate bg-white/80 px-1 py-0 text-center leading-none">
+                    {item.label}
+                </span>
             </div>
         </Draggable>
     );

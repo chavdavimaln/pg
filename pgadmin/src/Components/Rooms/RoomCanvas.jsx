@@ -5,6 +5,7 @@ import BedItem from "./BedItem";
 import TableItem from "./TableItem";
 import CupboardItem from "./CupboardItem";
 import DoorItem from "./DoorItem";
+import { GRID_SIZE } from "../../Utils/gridConfig";
 
 const RoomCanvas = ({
     beds,
@@ -23,7 +24,6 @@ const RoomCanvas = ({
 }) => {
     const wrapperRef = useRef(null);
     const [scale, setScale] = useState(1);
-    const GRID_SIZE = 80;
 
     const rows = Math.ceil(canvasHeight / GRID_SIZE);
     const cols = Math.ceil(canvasWidth / GRID_SIZE);
@@ -71,8 +71,6 @@ const RoomCanvas = ({
                         //     linear-gradient(to bottom, #d1d5db 1px, transparent 1px)
                         // `,
                         // backgroundSize: "80px 80px",
-                        minWidth: 400,
-                        minHeight: 300,
                     }}
                 >
                     {/* Real Grid */}

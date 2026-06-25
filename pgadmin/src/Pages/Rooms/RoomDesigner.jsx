@@ -12,7 +12,10 @@ import { getRotatedSize } from "../../Utils/gridConfig";
 import {
     CANVAS_PADDING,
     DEFAULT_SIZES,
+    getCenteredGridX,
+    getRoomItemSize,
     normalizeRoomItems,
+    snapRoomItemPosition,
 } from "../../Utils/roomLayoutEngine";
 import {
     getAllocationForItem,
@@ -65,9 +68,16 @@ const RoomDesigner = () => {
         setStudents(getStoredStudents());
     }, [id]);
 
+    const getLayoutItems = () => [
+        ...beds.map((item) => ({ ...item, type: "bed" })),
+        ...tables.map((item) => ({ ...item, type: "table" })),
+        ...cupboards.map((item) => ({ ...item, type: "cupboard" })),
+        ...doors.map((item) => ({ ...item, type: "door" })),
+    ];
+
     const addBed = () => {
         if (beds.length >= 6) return;
-        const pos = getNextPosition([...beds, ...tables, ...cupboards, ...doors], DEFAULT_SIZES.bed.width, DEFAULT_SIZES.bed.height);
+        const pos = getNextPosition(getLayoutItems(), DEFAULT_SIZES.bed.width, DEFAULT_SIZES.bed.height);
         setBeds([
             ...beds,
             {
@@ -95,7 +105,7 @@ const RoomDesigner = () => {
             alert("Maximum 6 tables allowed");
             return;
         }
-        const pos = getNextPosition([...beds, ...tables, ...cupboards, ...doors], DEFAULT_SIZES.table.width, DEFAULT_SIZES.table.height);
+        const pos = getNextPosition(getLayoutItems(), DEFAULT_SIZES.table.width, DEFAULT_SIZES.table.height);
         setTables([
             ...tables,
             {
@@ -126,7 +136,7 @@ const RoomDesigner = () => {
             alert("Maximum 6 cupboards allowed");
             return;
         }
-        const pos = getNextPosition([...beds, ...tables, ...cupboards, ...doors], DEFAULT_SIZES.cupboard.width, DEFAULT_SIZES.cupboard.height);
+        const pos = getNextPosition(getLayoutItems(), DEFAULT_SIZES.cupboard.width, DEFAULT_SIZES.cupboard.height);
         setCupboards([
             ...cupboards,
             {
@@ -142,7 +152,10 @@ const RoomDesigner = () => {
             alert("Only one door allowed");
             return;
         }
-        const pos = getNextPosition([...beds, ...tables, ...cupboards], DEFAULT_SIZES.door.width, DEFAULT_SIZES.door.height);
+        const pos = {
+            x: getCenteredGridX(canvasWidth, DEFAULT_SIZES.door.width),
+            y: Math.max(0, canvasHeight - DEFAULT_SIZES.door.height),
+        };
         setDoors([
             {
                 id: Date.now(),
@@ -200,9 +213,7 @@ const RoomDesigner = () => {
             setCupboards(cupboards.filter((item) => item.id !== selectedItem.id));
         }
 
-        if (selectedItem.type === "door") {
-            setDoors(doors.filter((item) => item.id !== selectedItem.id));
-        }
+        if (selectedItem.type === "door") return;
         setSelectedItem(null);
     };
 
@@ -237,17 +248,27 @@ const RoomDesigner = () => {
                     if (item.id !== selectedItem.id) return item;
 
                     const rotation = ((item.rotation || 0) + 90) % 360;
+                    const baseSize = DEFAULT_SIZES[selectedItem.type] || item;
+                    const size = getRotatedSize(baseSize.width, baseSize.height, rotation);
 
-                    const size = getRotatedSize(item.width, item.height, rotation);
+                    const snappedPosition = snapRoomItemPosition(
+                        item.x,
+                        item.y,
+                        size.width,
+                        size.height,
+                        canvasWidth,
+                        canvasHeight,
+                    );
+                    let x = snappedPosition.x;
+                    let y = snappedPosition.y;
 
-                    let x = item.x;
-                    let y = item.y;
+                    const invalidPosition =
+                        isOutOfBounds(x, y, size.width, size.height) ||
+                        isOverlapping(x, y, size.width, size.height, item.id);
 
-                    const overlap = isOverlapping(x, y, size.width, size.height, item.id);
-
-                    if (overlap) {
+                    if (invalidPosition) {
                         const pos = getNextPosition(
-                            [...beds, ...tables, ...cupboards, ...doors],
+                            getLayoutItems(),
                             size.width,
                             size.height,
                         );
@@ -256,7 +277,7 @@ const RoomDesigner = () => {
                         y = pos.y;
                     }
 
-                    return {
+                    const nextItem = {
                         ...item,
                         width: size.width,
                         height: size.height,
@@ -264,6 +285,8 @@ const RoomDesigner = () => {
                         x,
                         y,
                     };
+                    setSelectedItem({ ...nextItem, type: selectedItem.type });
+                    return nextItem;
                 }),
             );
         };
@@ -275,55 +298,80 @@ const RoomDesigner = () => {
     const updateBedPosition = (id, x, y) => {
         const bed = beds.find((item) => item.id === id);
         if (!bed) return;
-
-        if (isOutOfBounds(x, y, bed.width, bed.height) || isOverlapping(x, y, bed.width, bed.height, id)) {
-            alert("Cannot overlap another item");
-            return;
-        }
-
-        setBeds(beds.map((item) => (item.id === id ? { ...item, x, y } : item)));
-        setSelectedItem({ ...bed, x, y, type: "bed" });
-    };
-
-    const updateTablePosition = (id, x, y) => {
-        const table = tables.find((item) => item.id === id);
-        if (!table) return;
-
-        if (isOutOfBounds(x, y, table.width, table.height) || isOverlapping(x, y, table.width, table.height, id)) {
-            alert("Cannot overlap another item");
-            return;
-        }
-        setTables(tables.map((item) => (item.id === id ? { ...item, x, y } : item)));
-        setSelectedItem({ ...table, x, y, type: "table" });
-    };
-
-    const updateCupboardPosition = (id, x, y) => {
-        const cupboard = cupboards.find((item) => item.id === id);
-        if (!cupboard) return;
+        const size = getRoomItemSize("bed", bed);
+        const snappedPosition = snapRoomItemPosition(x, y, size.width, size.height, canvasWidth, canvasHeight);
+        const nextX = snappedPosition.x;
+        const nextY = snappedPosition.y;
 
         if (
-            isOutOfBounds(x, y, cupboard.width, cupboard.height) ||
-            isOverlapping(x, y, cupboard.width, cupboard.height, id)
+            isOutOfBounds(nextX, nextY, size.width, size.height) ||
+            isOverlapping(nextX, nextY, size.width, size.height, id)
         ) {
             alert("Cannot overlap another item");
             return;
         }
 
-        setCupboards(cupboards.map((item) => (item.id === id ? { ...item, x, y } : item)));
-        setSelectedItem({ ...cupboard, x, y, type: "cupboard" });
+        setBeds(beds.map((item) => (item.id === id ? { ...item, ...size, x: nextX, y: nextY } : item)));
+        setSelectedItem({ ...bed, ...size, x: nextX, y: nextY, type: "bed" });
+    };
+
+    const updateTablePosition = (id, x, y) => {
+        const table = tables.find((item) => item.id === id);
+        if (!table) return;
+        const size = getRoomItemSize("table", table);
+        const snappedPosition = snapRoomItemPosition(x, y, size.width, size.height, canvasWidth, canvasHeight);
+        const nextX = snappedPosition.x;
+        const nextY = snappedPosition.y;
+
+        if (
+            isOutOfBounds(nextX, nextY, size.width, size.height) ||
+            isOverlapping(nextX, nextY, size.width, size.height, id)
+        ) {
+            alert("Cannot overlap another item");
+            return;
+        }
+        setTables(tables.map((item) => (item.id === id ? { ...item, ...size, x: nextX, y: nextY } : item)));
+        setSelectedItem({ ...table, ...size, x: nextX, y: nextY, type: "table" });
+    };
+
+    const updateCupboardPosition = (id, x, y) => {
+        const cupboard = cupboards.find((item) => item.id === id);
+        if (!cupboard) return;
+        const size = getRoomItemSize("cupboard", cupboard);
+        const snappedPosition = snapRoomItemPosition(x, y, size.width, size.height, canvasWidth, canvasHeight);
+        const nextX = snappedPosition.x;
+        const nextY = snappedPosition.y;
+
+        if (
+            isOutOfBounds(nextX, nextY, size.width, size.height) ||
+            isOverlapping(nextX, nextY, size.width, size.height, id)
+        ) {
+            alert("Cannot overlap another item");
+            return;
+        }
+
+        setCupboards(cupboards.map((item) => (item.id === id ? { ...item, ...size, x: nextX, y: nextY } : item)));
+        setSelectedItem({ ...cupboard, ...size, x: nextX, y: nextY, type: "cupboard" });
     };
 
     const updateDoorPosition = (id, x, y) => {
         const door = doors.find((item) => item.id === id);
         if (!door) return;
+        const size = getRoomItemSize("door", door);
+        const snappedPosition = snapRoomItemPosition(x, y, size.width, size.height, canvasWidth, canvasHeight);
+        const nextX = snappedPosition.x;
+        const nextY = snappedPosition.y;
 
-        if (isOutOfBounds(x, y, door.width, door.height) || isOverlapping(x, y, door.width, door.height, id)) {
+        if (
+            isOutOfBounds(nextX, nextY, size.width, size.height) ||
+            isOverlapping(nextX, nextY, size.width, size.height, id)
+        ) {
             alert("Cannot overlap another item");
             return;
         }
 
-        setDoors(doors.map((item) => (item.id === id ? { ...item, x, y } : item)));
-        setSelectedItem({ ...door, x, y, type: "door" });
+        setDoors(doors.map((item) => (item.id === id ? { ...item, ...size, x: nextX, y: nextY } : item)));
+        setSelectedItem({ ...door, ...size, x: nextX, y: nextY, type: "door" });
     };
     const saveLayout = () => {
         const rooms = getStoredRooms();
@@ -378,10 +426,14 @@ const RoomDesigner = () => {
             for (let y = CANVAS_PADDING; y <= maxY; y += GRID_SIZE) {
                 for (let x = CANVAS_PADDING; x <= maxX; x += GRID_SIZE) {
                     const occupied = existingItems.some((item) => {
-                        const w = item.width || GRID_SIZE;
-                        const h = item.height || GRID_SIZE;
+                        const size = getRoomItemSize(item.type, item);
 
-                        return x < item.x + w && x + itemWidth > item.x && y < item.y + h && y + itemHeight > item.y;
+                        return (
+                            x < item.x + size.width &&
+                            x + itemWidth > item.x &&
+                            y < item.y + size.height &&
+                            y + itemHeight > item.y
+                        );
                     });
 
                     if (!occupied) {
@@ -407,12 +459,11 @@ const RoomDesigner = () => {
         x < 0 || y < 0 || x + width > canvasWidth || y + height > canvasHeight;
 
     const isOverlapping = (x, y, width, height, currentId) => {
-        const items = [...beds, ...tables, ...cupboards, ...doors];
+        const items = getLayoutItems();
         return items.some((item) => {
             if (item.id === currentId) return false;
-            const w = item.width || 80;
-            const h = item.height || 80;
-            return x < item.x + w && x + width > item.x && y < item.y + h && y + height > item.y;
+            const size = getRoomItemSize(item.type, item);
+            return x < item.x + size.width && x + width > item.x && y < item.y + size.height && y + height > item.y;
         });
     };
 
@@ -641,6 +692,7 @@ const RoomDesigner = () => {
                     rotateSelectedItem={rotateSelectedItem}
                     addDoor={addDoor}
                     doorCount={doors.length}
+                    selectedItem={selectedItem}
                 />
                 <RoomCanvas
                     beds={beds}

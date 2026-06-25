@@ -1,7 +1,7 @@
 // pgadmin/src/Components/Rooms/RoomCard.jsx
 import React from "react";
 import { Link } from "react-router-dom";
-import { Eye, Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 
 const RoomCard = ({ room, onDelete }) => {
     const listItems = (items) => (items.length ? items.join(", ") : "-");
@@ -27,10 +27,10 @@ const RoomCard = ({ room, onDelete }) => {
                 <Link
                     to={`/rooms/designer/${room.id}`}
                     className="flex h-9 w-9 items-center justify-center rounded bg-indigo-600 text-white"
-                    title="View room designer"
-                    aria-label="View room designer"
+                    title="Edit room"
+                    aria-label="Edit room"
                 >
-                    <Eye className="h-4 w-4" />
+                    <Pencil className="h-4 w-4" />
                 </Link>
                 <button
                     type="button"
